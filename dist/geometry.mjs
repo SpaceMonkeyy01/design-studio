@@ -41,3 +41,5 @@ export function returnShell(contours,depth,thickness){const positions=[],normals
   }
  }return {positions,normals,uv};
 }
+
+export function insetContour(loop,thickness){const normals=loop.map((a,i)=>{const b=loop[(i+1)%loop.length],dx=b[0]-a[0],dy=b[1]-a[1],n=Math.hypot(dx,dy)||1;return [-dy/n,dx/n];});return loop.map((p,i)=>{const a=normals[(i+loop.length-1)%loop.length],b=normals[i],nx=a[0]+b[0],ny=a[1]+b[1],len=Math.hypot(nx,ny)||1,n=[nx/len,ny/len],amount=Math.min(thickness*3,thickness/Math.max(.25,n[0]*b[0]+n[1]*b[1]));return [p[0]-n[0]*amount,p[1]-n[1]*amount];});}
