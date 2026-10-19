@@ -1,0 +1,18 @@
+Halo Studio handover validation — 19 October 2026
+Source commit: 00204b2bcc1461331a1a59cb1e8596d90b6cfd55
+No browser/GPU rendering or five-second guarantee is certified.
+
+$ python tests/verify_snapshot.py
+SOURCE_SNAPSHOT_SYNTAX_AND_GIT_RESTORE_OK
+Manifest not yet generated; run again after packaging.
+
+
+$ node tests/geometry-regression.mjs
+{"source":"imgo.jpg","original_contours":55,"cleaned_components":27,"counters":8,"closed_return_rings":35,"vertices":42996,"failed_components":[],"visual_renderer_test":"not run: CPU-only regression","cpu_ms":415}
+
+
+$ node tests/runtime-smoke.mjs
+CPU_ASSEMBLY_OK 27
+MOCK_UPLOAD_AND_REPEAT_OK
+FORMAT_AND_RENDERER_FEEDBACK_OK
+

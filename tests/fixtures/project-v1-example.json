@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "settings": {
+    "width": 48,
+    "gap": 0.25,
+    "depth": 1,
+    "mountcount": "auto",
+    "finish": "artwork",
+    "sheen": "satin",
+    "wallscale": 100,
+    "acrylictype": "clear",
+    "paint": "#263c68",
+    "led": "6500",
+    "cct": 6500,
+    "rgb": "#80bfff",
+    "intensity": 0.75,
+    "wall": "plaster"
+  },
+  "background": "auto",
+  "customDepth": false,
+  "wallPhoto": null,
+  "artwork": "sample.png",
+  "name": "West sample"
+}
