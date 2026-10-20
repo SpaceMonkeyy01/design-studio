@@ -14,7 +14,12 @@ npm test                  # CPU geometry + mocked runtime tests (fast, no browse
 npm install && npx playwright install chromium   # once, for the visual test
 npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/
 HEADED=1 npm run test:visual   # watch it run
+CHANNEL=msedge npm run test:visual   # use installed Edge if Playwright's Chromium won't install
+cp -r test-output test-baseline      # once, before a change: keep the "before" screenshots
+npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
+
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All 9 screenshots match`.
 
 `app/` is the source (no build step). Bump `?v=N` in `index.html` / module imports whenever you change a module, or browsers will cache the old one.
 
@@ -23,25 +28,26 @@ HEADED=1 npm run test:visual   # watch it run
 ```
 app/
   index.html, style.css
+  app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
     artwork.mjs    mask cleanup, return rings (Clipper)
     geometry.mjs   trace, smooth, group loops
     routing.mjs    distance field, mounts, LED layout, wire A*
-    materials.mjs  finishes, env map          (split out of app.js)
-    scene.mjs      renderer, lights, wall      (split out of app.js)
-    export.mjs     4K PNG, cutout, JSON        (split out of app.js)
+    materials.mjs  finishes, LED colour, env map, artwork colours
+    scene.mjs      renderer, lights, camera framing, wall
+    export.mjs     4K PNG, download, contact sheet, project JSON (cutout: not built yet)
   signs/
-    halo-lit/      build.mjs + its own CLAUDE.md
+    halo-lit/      build.mjs (construction, halo, exploded offsets, inspector text) + its own CLAUDE.md
     <next-type>/   one folder per sign type, same shape
 tests/
   fixtures/        shared test logos (add one per artwork bug fixed)
-  signs/<type>/    per-type tests
+  signs/<type>/    per-type tests (none yet; halo-lit is covered by runtime-smoke + visual-smoke)
 gemini/            compositing prompts + AI Studio apps (NOT 3D code)
 qc/                Airtable QC notes + report scripts
 docs/handover/     original ChatGPT handover (read-only history)
 ```
 
-Files marked "split out of app.js" do not exist yet. Until the refactor lands, that code is still in `app.js`.
+Still halo-specific inside `app.js` (move behind a sign interface when the second type starts): halo opacity factor (×1.15) in refreshLighting/intensity, `'Halo-lit'` status text, part names in setMode/inspectPart. `pos`/`shapes`/`uvGeometry` live in `signs/halo-lit/build.mjs` for now; move them to `core/` before a second type uses them.
 
 ## Architecture
 
