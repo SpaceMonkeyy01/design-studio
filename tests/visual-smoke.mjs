@@ -3,6 +3,7 @@
 // Usage: npm run test:visual            (headless, real GPU if available)
 //        HEADED=1 npm run test:visual   (watch it run)
 //        SWIFTSHADER=1 npm run test:visual  (CPU fallback for machines without GPU; slow)
+//        CHANNEL=msedge npm run test:visual (use installed Edge/Chrome instead of Playwright's Chromium)
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 const root = fileURLToPath(new URL('../dist/', import.meta.url));
@@ -12,7 +13,7 @@ const types = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javas
 const server = http.createServer((req, res) => { const p = path.join(root, decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html'); if (!p.startsWith(root) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404).end(); return; } res.writeHead(200, { 'Content-Type': types[path.extname(p)] || 'application/octet-stream' }); fs.createReadStream(p).pipe(res); });
 await new Promise(r => server.listen(0, '127.0.0.1', r)); const url = `http://127.0.0.1:${server.address().port}/`;
 const args = process.env.SWIFTSHADER ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--ignore-gpu-blocklist', '--enable-gpu'];
-const browser = await chromium.launch({ headless: !process.env.HEADED, args });
+const browser = await chromium.launch({ headless: !process.env.HEADED, args, channel: process.env.CHANNEL });
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } }); page.setDefaultTimeout(180000);
 const logs = []; page.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); }); page.on('pageerror', e => logs.push('pageerror: ' + e.message));
 const results = []; const stage = page.locator('#stage');
