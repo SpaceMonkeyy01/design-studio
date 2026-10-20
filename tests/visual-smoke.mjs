@@ -30,6 +30,18 @@ for (const f of fixtures) {
   results.push({ step: 'upload ' + name, ms: Date.now() - t, ok, status });
   await page.click('[data-view=front]'); await snap(String(n++).padStart(2, '0') + '-' + name.replace('.png', ''));
 }
+// Fixed-camera views of the last logo, so refactors can be checked pixel-for-pixel against a baseline.
+const click = sel => page.evaluate(s => document.querySelector(s).click(), sel);
+const choose = (id, value) => page.evaluate(([id, value]) => { const e = document.getElementById(id); e.value = value; e.dispatchEvent(new Event('change')); }, [id, value]);
+const steps = [
+  ['exploded', () => click('[data-mode=exploded]')],
+  ['inside', () => click('[data-mode=internal]')],
+  ['gold-mirror', async () => { await click('[data-mode=assembled]'); await click('[data-view=front]'); await click('[data-finish=gold-mirror]'); }],
+  ['unlit', () => click('#unlit')],
+  ['charcoal-wall', async () => { await click('#lit'); await choose('wall', 'charcoal'); }],
+  ['inspect-studs', async () => { await click('[data-mode=exploded]'); await click('[data-part=studs]'); }],
+];
+for (const [name, act] of steps) { await act(); await snap(String(n++).padStart(2, '0') + '-' + name); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000).map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
