@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {traceMask,groupLoops,contains,kelvinRGB,smoothLoops,insetContour} from './geometry.mjs?v=9';
-import {cleanArtworkMask,clippedReturnRings} from './artwork.mjs?v=9';
-import {createLetterRouter,distanceField,mountingPoints,layoutModules,componentLabels} from './routing.mjs?v=9';
+import {traceMask,groupLoops,contains,kelvinRGB,smoothLoops,insetContour} from './core/geometry.mjs?v=10';
+import {cleanArtworkMask,clippedReturnRings} from './core/artwork.mjs?v=10';
+import {createLetterRouter,distanceField,mountingPoints,layoutModules,componentLabels} from './core/routing.mjs?v=10';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 const $=id=>document.getElementById(id), toast=s=>{$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),3500);};
