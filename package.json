@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npx --yes http-server dist -p 8080 -a 127.0.0.1 -c-1",
+    "start": "npx --yes http-server app -p 8080 -a 127.0.0.1 -c-1",
     "test": "node tests/geometry-regression.mjs && node tests/runtime-smoke.mjs",
     "test:visual": "node tests/visual-smoke.mjs",
     "test:compare": "node tests/compare-screenshots.mjs test-baseline test-output"

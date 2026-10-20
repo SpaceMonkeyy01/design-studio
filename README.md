@@ -8,7 +8,7 @@ npm test           # CPU tests
 npm run test:visual  # real-browser render + timing (after: npm install && npx playwright install chromium)
 ```
 
-- `dist/`: the app (edit here)
+- `app/`: the app (edit here, no build step)
 - `tests/`: CPU regression, mocked runtime, visual smoke; `tests/fixtures/` holds test logos
 - `docs/handover/`: original ChatGPT handover docs (architecture, requirements, optimisation plan)
 - `references/`: the original requester's reference screenshots

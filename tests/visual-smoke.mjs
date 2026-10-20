@@ -1,4 +1,4 @@
-// Real-browser render test. Serves dist/, opens it in Chromium (real GPU by default),
+// Real-browser render test. Serves app/, opens it in Chromium (real GPU by default),
 // times sample load + each fixture upload, and saves screenshots to test-output/.
 // Usage: npm run test:visual            (headless, real GPU if available)
 //        HEADED=1 npm run test:visual   (watch it run)
@@ -6,7 +6,7 @@
 //        CHANNEL=msedge npm run test:visual (use installed Edge/Chrome instead of Playwright's Chromium)
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
-const root = fileURLToPath(new URL('../dist/', import.meta.url));
+const root = fileURLToPath(new URL('../app/', import.meta.url));
 const out = fileURLToPath(new URL('../test-output/', import.meta.url)); fs.mkdirSync(out, { recursive: true });
 const fixtures = ['logo-colored-serif.png', 'logo-white-on-transparent.png'].map(f => fileURLToPath(new URL('fixtures/' + f, import.meta.url)));
 const types = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.css':'text/css', '.png':'image/png', '.jpg':'image/jpeg', '.json':'application/json' };
