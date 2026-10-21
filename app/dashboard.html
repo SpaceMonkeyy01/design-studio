@@ -197,7 +197,7 @@ function tile(signType, vars){
   const t = el('div','tile'+(d===vars.length?' allDone':''));
 
   const h = el('div','thead');
-  h.append(el('b',signType), el('span','ratio',`${d}/${vars.length}`));
+  h.append(el('b',null,signType), el('span','ratio',`${d}/${vars.length}`));
   t.append(h);
 
   const bar = el('div','tbar'); const fill=el('i');

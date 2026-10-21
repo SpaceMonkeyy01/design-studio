@@ -9,7 +9,7 @@ Implemented: **halo-lit** and **face-lit**, both from the one `channel-letter` c
 ## Run
 
 ```sh
-npm start                 # serves app/ at http://127.0.0.1:8080 (needs a WebGL2 browser)
+npm start                 # serves app/ at http://127.0.0.1:8080 (needs a WebGL2 browser); build board at /dashboard.html
 npm test                  # CPU geometry + mocked runtime tests (fast, no browser)
 npm install && npx playwright install chromium   # once, for the visual test
 npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/ (+ cutout/ layers, alpha-checked)
@@ -31,6 +31,7 @@ Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on th
 app/
   index.html, style.css   index.html?type=<registry id> opens that variant
   registry.mjs     every sign type x variant the studio sells (provided data: do not edit, report problems)
+  dashboard.html   build board from registry.mjs; built variants link to index.html?type=<id>
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
     artwork.mjs    mask cleanup, return rings, region offsets (Clipper)
