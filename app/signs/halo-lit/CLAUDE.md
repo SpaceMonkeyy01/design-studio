@@ -21,7 +21,7 @@ Light leaves through the back only. The face and returns never glow.
 
 - **Acrylic**: emissive in the LED colour. Strength = intensity × face/edge factor: clear .12/.65, frosted .75/.95, opal 1.15/1.2.
 - **LED lenses**: emissive 0.7.
-- **Halo**: the artwork mask blurred by 8 + 5 × gap (inches) px, tinted with the LED colour, drawn on an additive plane just in front of the wall. Opacity = intensity × 1.15. This is not simulated light.
+- **Halo**: the artwork mask blurred twice and stacked: a core (σ = 0.4″ + gap) and a wide spread (σ = 1″ + 2.5 × gap, 45% alpha), both in real inches so they scale with sign width and gap, tinted with the LED colour, drawn on an additive plane just in front of the wall. Opacity = intensity × 1.15. This is not simulated light.
 - **Unlit mode**: every emissive is 0 and the halo is hidden.
 
 ## Defaults (UI ranges)

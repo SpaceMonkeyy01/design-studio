@@ -94,12 +94,11 @@ flowchart LR
 
 ## Backlog (ordered)
 
-1. **Halo is faint on light walls.** Tune blur/opacity in `buildWall()` against the gap.
-2. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
-3. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-4. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
-5. **More sign types**, one at a time (see above).
-6. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
+1. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
+2. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
+3. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
+4. **More sign types**, one at a time (see above).
+5. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 
