@@ -1,4 +1,5 @@
-// Face-lit construction rules on the HALO HALO fixture (CPU only, mocked canvas). See app/signs/face-lit/CLAUDE.md.
+// Channel-letter construction rules on the HALO HALO fixture (CPU only, mocked canvas). See app/signs/channel-letter/CLAUDE.md.
+// Mostly face-lit (halo-lit is covered by runtime-smoke + the screenshots), plus the config switches.
 // Checks the looks QC kept failing on that a build can guarantee: no halo (only a front face glow), nothing lit behind the letters,
 // returns/trim/back never glow, no hardware from an unselected mounting mode.
 import fs from 'node:fs'; import vm from 'node:vm'; import {register} from 'node:module';
@@ -12,7 +13,9 @@ const {cleanArtworkMask} = await import('../../../app/core/artwork.mjs');
 const {traceMask, groupLoops, smoothLoops} = await import('../../../app/core/geometry.mjs');
 const {distanceField, componentLabels} = await import('../../../app/core/routing.mjs');
 const {isTinyPiece} = await import('../../../app/core/hardware.mjs');
-const {sign} = await import('../../../app/signs/face-lit/build.mjs');
+const {signs, buildChannelLetter, CONFIGS, VARIANTS} = await import('../../../app/signs/channel-letter/build.mjs');
+const {SIGNS: REGISTRY} = await import('../../../app/registry.mjs');
+const sign = signs['face-lit'];
 
 const fixture = JSON.parse(fs.readFileSync(new URL('../../fixtures/halo-halo-mask.json', import.meta.url)));
 const art = {mask: cleanArtworkMask(fixture.mask, fixture.w, fixture.h), w: fixture.w, h: fixture.h, texture: new THREE.Texture()};
@@ -53,4 +56,19 @@ unlit.root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unl
 const trimless = sign.build(art, {...settings, trim: 'none'}, true, renderer);
 if (trimless.parts.trim.children.length) fail('trimless still has a trim cap');
 if (trimless.parts.face.children.length !== pieces) fail('trimless lost face pieces');
-console.log('FACE_LIT_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));
+// ?type= table: exactly the registry's built channel-letter rows, each opening a real sign with real select options.
+const built = REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 'done').map(r => r.id).sort().join();
+if (Object.keys(VARIANTS).sort().join() !== built) fail('VARIANTS must list exactly the registry rows with build channel-letter and status done');
+for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
+  for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t); }
+// Every mounting a config offers must be built in core/mounting.mjs (flush only, until raceway / backers get dimensions).
+const {mounting} = await import('../../../app/core/mounting.mjs');
+for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting(m)?.built)) fail(id + ' offers an unbuilt mounting');
+// Config switches: the two built constructions resolve; anything else is refused, not half-built.
+for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
+const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
+if (!halo.parts.acrylic?.children.length || halo.parts.clamps.children.length < 3 * meaningful || halo.parts.trim) fail('halo-lit config did not build an acrylic back with clamps');
+for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'opaque', returns: 'translucent', back: 'opaque', emit: ['side']}]) {
+  let refused = false; try { buildChannelLetter(art, settings, true, renderer, cfg); } catch (e) { refused = /not built yet/.test(e.message); }
+  if (!refused) fail('unbuilt construction was not refused: ' + JSON.stringify(cfg)); }
+console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));
