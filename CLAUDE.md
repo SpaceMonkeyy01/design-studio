@@ -38,6 +38,7 @@ app/
     materials.mjs  finishes, LED colour, env map, artwork colours
     scene.mjs      renderer, lights, camera framing, wall
     shapes.mjs     artwork space → world: pos, shapes, UVs, contours, flat caps
+    glow.mjs       light planes: blurred image on an additive plane (halo, face glow)
     hardware.mjs   part groups, LED modules + routed wiring, threaded studs, drain markers
     export.mjs     4K PNG, cutout layers (difference matte), download, contact sheet, project JSON
   signs/
@@ -52,7 +53,7 @@ qc/                Airtable QC notes + report scripts
 docs/handover/     original ChatGPT handover (read-only history)
 ```
 
-**Sign interface.** Each `signs/<type>/build.mjs` exports `sign`: `{id, label, standardDepth, build(art,s,isLit,renderer) → {root, parts}, halo (builder or null), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers types in `SIGNS` and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
+**Sign interface.** Each `signs/<type>/build.mjs` exports `sign`: `{id, label, standardDepth, build(art,s,isLit,renderer) → {root, parts}, glow (light-plane builder or null; `userData.front` puts it in front of the sign instead of on the wall), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers types in `SIGNS` and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
 
 ## Architecture
 
@@ -68,7 +69,7 @@ flowchart LR
 
 - World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. The front of the sign is at z≈0 and everything else goes to −z. Halo-lit: face, returns, acrylic back, gap, wall. Face-lit: trim + acrylic face, returns, sealed back, wall (no gap).
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
-- The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff).
+- The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff), plus a face glow plane in front of them.
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.
 - A "letter" is a raster connected component, not a semantic glyph.
 

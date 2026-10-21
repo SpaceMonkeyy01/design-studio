@@ -4,6 +4,7 @@ import {clippedReturnRings,offsetRegions} from '../../core/artwork.mjs?v=11';
 import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=11';
 import {artSpace} from '../../core/shapes.mjs?v=1';
+import {glowPlane} from '../../core/glow.mjs?v=1';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=1';
 // Face-lit (front-lit) channel letters: trim cap, lit translucent acrylic face, opaque returns, front-facing LEDs,
 // sealed metal back, flush threaded studs. Nothing glows behind the letters. See CLAUDE.md in this folder.
@@ -14,13 +15,16 @@ const FACE_GLOW=2.4;
 const TRIM_FINISH={black:'black',white:'white',artwork:'artwork',silver:'silver-brushed',gold:'gold-brushed',bronze:'bronze-brushed'};
 // Lit face: the artwork colour (vinyl print, or one tint per letter) shines through, brighter over each LED module.
 // Near-black artwork stays dark; an all-black logo lights white instead (black by day, white at night).
-function faceMaterial(art,s,isLit,modules){const w=art.w,h=art.h,dark=c=>!c?.colour?.isColor||.2126*c.colour.r+.7152*c.colour.g+.0722*c.colour.b<.012,allDark=art.colors.every(dark);
- const texture=paint=>{const c=document.createElement('canvas');c.width=w;c.height=h;paint(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;};
+// The colour the face lights in, painted in mask pixels: vinyl artwork, one tint per letter, or white for an all-black logo.
+function faceColour(art,s){const dark=c=>!c?.colour?.isColor||.2126*c.colour.r+.7152*c.colour.g+.0722*c.colour.b<.012,allDark=art.colors.every(dark);
  const hex=i=>{const c=art.colors[i]?.colour;return c?.isColor?'#'+c.getHexString(THREE.SRGBColorSpace):'#a6a6a6';};
  const tint=x=>art.loops.forEach((l,i)=>{x.fillStyle=hex(i);x.beginPath();for(const loop of [l.points,...l.holes]){loop.forEach((p,k)=>k?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();}x.fill('evenodd');});
- const colour=x=>s.facetype==='tinted'?tint(x):x.drawImage(art.texture.image,0,0,w,h),pitch=w*LED_PITCH/s.width;
+ const paint=x=>{if(allDark){x.fillStyle='#ffffff';x.fillRect(0,0,art.w,art.h);}else if(s.facetype==='tinted')tint(x);else x.drawImage(art.texture.image,0,0,art.w,art.h);};
+ return {tint,paint};}
+function faceMaterial(art,s,isLit,modules){const w=art.w,h=art.h,{tint,paint}=faceColour(art,s),pitch=w*LED_PITCH/s.width;
+ const texture=draw=>{const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;};
  // Black outside the letters, so face edges sampling past the outline darken slightly instead of picking up the falloff grey.
- const glow=texture(x=>{x.fillStyle=allDark?'#ffffff':'#000000';x.fillRect(0,0,w,h);if(!allDark)colour(x);
+ const glow=texture(x=>{x.fillStyle='#000000';x.fillRect(0,0,w,h);paint(x);
   // LED falloff, sRGB: 196 between modules (≈55% linear) up to 255 over each module.
   const f=document.createElement('canvas');f.width=w;f.height=h;const fx=f.getContext('2d');fx.fillStyle='rgb(196,196,196)';fx.fillRect(0,0,w,h);fx.globalCompositeOperation='lighter';for(const p of modules){const g=fx.createRadialGradient(p[0],p[1],0,p[0],p[1],pitch*.8);g.addColorStop(0,'rgba(59,59,59,1)');g.addColorStop(1,'rgba(59,59,59,0)');fx.fillStyle=g;fx.fillRect(p[0]-pitch,p[1]-pitch,pitch*2,pitch*2);}
   x.globalCompositeOperation='multiply';x.drawImage(f,0,0);});
@@ -54,6 +58,11 @@ export function buildFaceLit(art,s,isLit,renderer){const {root,parts,addPart}=pa
  shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:faceT,bevelEnabled:false})),[faceMat,artworkMaterial(returnBase,index,false,s.returns,art.colors)]);face.position.z=-faceT;addPart('face',face);const back=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:backT,bevelEnabled:false}),backMat);back.position.z=wallZ;addPart('back',back);});
  return {root,parts};
 }
+// Face glow: the lit face colours, blurred, on an additive plane just in front of the face. It reads as light spilling
+// past the trim, like bloom in a photo of a lit sign. Front only: nothing is added behind the letters or onto the wall's colour.
+const GLOW_CORE=.35,GLOW_WIDE=1.4,GLOW=.8;
+export function buildFaceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
+ return glowPlane(c,height,{core:GLOW_CORE*inch,wide:GLOW_WIDE*inch,opacity:isLit?s.intensity*GLOW:0,opacityFactor:GLOW,z:(TRIM+.05)*inch,front:true});}
 // Exploded-view z offsets per part (world units), front to back: trim, face, LEDs, wires, returns, back, studs.
 // LEDs and wiring sit on the back, so they move forward by the can depth to clear the returns.
 export const explodedOffsets=s=>{const d=s.depth*4/s.width;return {trim:1.05,face:.7,leds:d+.3,wires:d+.25,returns:0,drain:0,back:-.35,studs:-.7};};
@@ -68,8 +77,8 @@ export const componentInfo={
  studs:['Threaded studs','3–4 threaded studs per letter through the back into the wall, nut inside the can. Flush mounting, no wall gap. Sizes are illustrative.'],
  drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.']
 };
-// Sign-type interface read by app.js (same shape as signs/halo-lit). No halo: halo is null.
-export const sign={id:'face-lit',label:'Face-lit',standardDepth:5,build:buildFaceLit,halo:null,
+// Sign-type interface read by app.js (same shape as signs/halo-lit). Its light plane is the face glow, in front of the letters.
+export const sign={id:'face-lit',label:'Face-lit',standardDepth:5,build:buildFaceLit,glow:buildFaceGlow,
  // Flush: the wall touches the sealed back.
  wallDepth:s=>(s.depth+BACK)*(4/s.width),wallGap:()=>0,
  explodedOffsets,componentInfo,

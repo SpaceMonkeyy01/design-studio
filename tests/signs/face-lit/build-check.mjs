@@ -1,5 +1,5 @@
 // Face-lit construction rules on the HALO HALO fixture (CPU only, mocked canvas). See app/signs/face-lit/CLAUDE.md.
-// Checks the looks QC kept failing on that a build can guarantee: no halo, nothing lit behind the letters,
+// Checks the looks QC kept failing on that a build can guarantee: no halo (only a front face glow), nothing lit behind the letters,
 // returns/trim/back never glow, no hardware from an unselected mounting mode.
 import fs from 'node:fs'; import vm from 'node:vm'; import {register} from 'node:module';
 register('../../three-resolve.mjs', import.meta.url);
@@ -29,7 +29,10 @@ const pieces = art.loops.length, meaningful = art.loops.filter(l => !isTinyPiece
 const {root, parts} = sign.build(art, settings, true, renderer); root.updateMatrixWorld(true);
 const names = Object.keys(parts).sort().join(',');
 if (names !== 'back,drain,face,leds,returns,studs,trim,wires') fail('unexpected parts ' + names + ' (no halo, acrylic back, clamps, raceway or backer under flush)');
-if (sign.halo !== null) fail('face-lit must not build a halo plane');
+// Its only light plane is the face glow, in front of the letters; no halo behind them.
+const glow = sign.glow(art, settings, true, -sign.wallDepth(settings), 4 * art.h / art.w);
+if (!glow.userData.front || glow.position.z <= 0 || glow.material.opacity <= 0) fail('face glow must be a lit plane in front of the face (no halo behind the letters)');
+if (sign.glow(art, settings, false, -sign.wallDepth(settings), 4 * art.h / art.w).material.opacity !== 0) fail('unlit face glow must be off');
 if (sign.wallGap(settings) !== 0) fail('flush mounting has no wall gap');
 root.traverse(o => { if (!o.matrixWorld.elements.every(Number.isFinite)) fail('invalid transform'); });
 for (const part of ['face', 'back']) if (parts[part].children.length !== pieces) fail(`expected ${pieces} ${part} pieces, got ${parts[part].children.length}`);

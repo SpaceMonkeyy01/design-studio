@@ -4,6 +4,7 @@ import {clippedReturnRings} from '../../core/artwork.mjs?v=11';
 import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=11';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
+import {glowPlane} from '../../core/glow.mjs?v=1';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=1';
 // Halo-lit (reverse) channel letters: opaque metal face + returns, rear-facing LEDs, 3/16″ acrylic back,
 // stud + spacer mounts with L-clamps, and a halo on the wall behind. See CLAUDE.md in this folder.
@@ -32,7 +33,7 @@ export function buildHaloLit(art,s,isLit,renderer){const {root,parts,addPart}=pa
 // Halo: blurred copy of the artwork mask in the LED colour on an additive plane just in front of the wall (not simulated light).
 // Halo = tight core + wide soft spread, both sized in inches and growing with the wall gap
 // (light leaving the back spreads further the further the wall is). Margin m keeps the wide layer unclipped.
-export function buildHalo(art,s,isLit,wallZ,height){const inch=4/s.width,core=inch*(.4+s.gap),wide=inch*(1+2.5*s.gap),m=Math.max(.5,3*wide),w=4+2*m,h=height+2*m,ppu=Math.min(1024/5,4096/Math.max(w,h));const glow=document.createElement('canvas');glow.width=Math.round(w*ppu);glow.height=Math.round(h*ppu);const gx=glow.getContext('2d'),colour=ledColour(s);for(const [sigma,alpha] of [[wide,.45],[core,1]]){gx.filter=`blur(${sigma*ppu}px)`;gx.globalAlpha=alpha;gx.drawImage(art.glowSource,m*ppu,m*ppu,4*ppu,height*ppu);}gx.filter='none';gx.globalAlpha=1;gx.globalCompositeOperation='source-in';gx.fillStyle='#'+colour.getHexString(THREE.SRGBColorSpace);gx.fillRect(0,0,glow.width,glow.height);const gt=new THREE.CanvasTexture(glow);gt.colorSpace=THREE.SRGBColorSpace;const haloMesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:gt,transparent:true,opacity:isLit?s.intensity*1.15:0,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false}));haloMesh.userData.opacityFactor=1.15;haloMesh.position.z=wallZ+.008;return haloMesh;}
+export function buildHalo(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+.008});}
 // Exploded-view z offsets per part (world units).
 export const explodedOffsets={face:.9,returns:.2,leds:.6,acrylic:-.55,studs:-.7,wires:.4,drain:.2,clamps:-.35};
 // Inspector title and description per part.
@@ -47,7 +48,7 @@ export const componentInfo={
  drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.']
 };
 // Sign-type interface read by app.js. Every sign type exports one of these.
-export const sign={id:'halo-lit',label:'Halo-lit',standardDepth:1,build:buildHaloLit,halo:buildHalo,
+export const sign={id:'halo-lit',label:'Halo-lit',standardDepth:1,build:buildHaloLit,glow:buildHalo,
  // Wall sits behind the acrylic back, across the wall gap.
  wallDepth:s=>{const inch=4/s.width;return s.depth*inch+.1875*inch;},wallGap:s=>s.gap*(4/s.width),
  explodedOffsets,componentInfo,

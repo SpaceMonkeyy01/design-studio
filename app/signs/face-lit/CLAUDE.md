@@ -10,7 +10,7 @@ Marked **ASSUMED** = my guess, check it. Marked **ASK** = a real dimension I do 
 
 | Question | Answer |
 |---|---|
-| 1 Trim | Plastic **and** metallic trim are both sold. Trim has its own colour, independent of returns. Default black plastic (QC: "trims should be black"). Metallic = brushed silver / gold / bronze. |
+| 1 Trim | Plastic **and** metallic trim are both sold. Trim has its own colour, independent of returns. Default: plastic trim matching the artwork (shop's choice, 2026-10-21; QC once logged "trims should be black", which is still an option). Metallic = brushed silver / gold / bronze. |
 | 2 Depth, LED throw | 5″ standard (range 3–8″), LED modules ~4″ apart. |
 | 3 Face | Both, user picks: white acrylic + translucent vinyl (multi-colour, follows the artwork) or solid-tinted acrylic (one colour per letter). |
 | 4 Flush | Flat to the wall, gap 0. Raceway and backer come later, in `core/`. |
@@ -38,6 +38,8 @@ Still open: 6 (raceway and backer inches), and whether metallic trim should also
 
 Light leaves **forward through the acrylic face only**. Zero light exits backward or sideways. There is no halo plane in this sign type.
 
+- **Face glow** (added at the shop's request, 2026-10-21: "the face is not lit"): the face colours, blurred (σ 0.35″ core + 1.4″ wide), on an additive plane just **in front of** the face (`buildFaceGlow`, `core/glow.mjs`). It reads as the bloom a lit face shows in a photo and spills a little past the trim. Strength `GLOW` 0.8 × intensity; at 1.0 blue shifted to cyan and red to pink. Dark accents add nothing. Unlit: off.
+
 - **Acrylic face**: emissive in the artwork colour, not the LED colour. The acrylic tints the light; the LEDs stay white. This is the opposite of halo-lit, where the LED colour *is* the visible colour.
 - **LED lenses**: emissive, hidden behind the face. Value **ASSUMED** 0.7 (halo-lit's).
 - **How it is built**: the face's `emissiveMap` is baked per sign: artwork colour (vinyl texture, or per-letter tint) × an LED falloff (≈55% linear between modules, 100% over each). Emissive colour = LED colour, intensity = intensity × 2.4 (`FACE_GLOW`, tuned on screenshots). When lit, the face's diffuse drops to 25% so the glow carries the colour; at full diffuse the colour washed out to pastel.
@@ -56,7 +58,7 @@ Light leaves **forward through the acrylic face only**. Zero light exits backwar
 | LEDs | 6500K white | every LED colour, as halo-lit |
 | Intensity | 75% (shared slider) **ASSUMED** | 0–100% |
 | Face acrylic | 3/16″ **ASSUMED**, vinyl | vinyl / tinted |
-| Trim | black plastic | black / white / match-artwork plastic, silver / gold / bronze brushed metal, trimless |
+| Trim | match-artwork plastic | match-artwork / black / white plastic, silver / gold / bronze brushed metal, trimless |
 | Return colour | match artwork | match artwork / white / black |
 | Mounting | flush | flush only for now; raceway / backer later |
 | Mounts | auto (3–4) | 3 / 4 / auto |
@@ -86,7 +88,7 @@ These survive and need test assertions:
 - **Face darker than the wall.** Measured at 0.78× wall luminance in Gemini renders — that is why faces read as paint. Assert face luminance > wall luminance in the screenshot test.
 - **Flat uniform face.** A constant emissive reads as paint even when bright. Some falloff between LED rows is wanted.
 - **Blown-out face.** Too hot and the hue washes to white.
-- **Any glow behind the letters.** No additive halo plane, no coloured light, no bloom post-process. Assert the face-lit scene graph contains no halo plane.
+- **Any glow behind the letters.** No additive halo plane, no coloured light, no bloom post-process. The only light plane is the face glow, in front of the letters; tests assert it is in front (`userData.front`, z > 0).
 - **Colour cast on wall, raceway or backer.** Only possible if a coloured light or bloom is added. Do not add one.
 - **Glowing returns or trim.**
 - **Hardware from an unselected mounting mode appearing** (a backer under flush, a raceway strip under flush).
