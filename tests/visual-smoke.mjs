@@ -82,7 +82,9 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   const open = async (needle, sign) => { await page.goto(url); await page.waitForSelector('a.v'); await page.click(needle ? `a.v[href*="${needle}"] >> nth=0` : 'a.cta');
     await page.waitForFunction(s => new RegExp('^' + s).test(document.getElementById('status').textContent), sign); return page.evaluate(() => ({ url: location.search, sign: document.getElementById('signtype').value, trim: document.getElementById('trim').value })); };
   const studio = await open(null, 'Halo-lit'), halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit');
-  results.push({ step: 'landing board click-through', ok: untitled === 0 && links.length === 6 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, untitled, studio, halo, premium }); }
+  // And back: the studio's "← Build board" link returns to the landing page.
+  await page.click('#boardlink'); const back = await page.waitForSelector('a.cta').then(() => true, () => false);
+  results.push({ step: 'landing board click-through', ok: back && untitled === 0 && links.length === 6 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, untitled, back, studio, halo, premium }); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
