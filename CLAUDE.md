@@ -12,7 +12,7 @@ Today only **halo-lit** is implemented. Other sign types are added one at a time
 npm start                 # serves app/ at http://127.0.0.1:8080 (needs a WebGL2 browser)
 npm test                  # CPU geometry + mocked runtime tests (fast, no browser)
 npm install && npx playwright install chromium   # once, for the visual test
-npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/
+npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/ (+ cutout/ layers, alpha-checked)
 HEADED=1 npm run test:visual   # watch it run
 CHANNEL=msedge npm run test:visual   # use installed Edge if Playwright's Chromium won't install
 cp -r test-output test-baseline      # once, before a change: keep the "before" screenshots
@@ -37,7 +37,7 @@ app/
     routing.mjs    distance field, mounts, LED layout, wire A*
     materials.mjs  finishes, LED colour, env map, artwork colours
     scene.mjs      renderer, lights, camera framing, wall
-    export.mjs     4K PNG, download, contact sheet, project JSON (cutout: not built yet)
+    export.mjs     4K PNG, cutout layers (difference matte), download, contact sheet, project JSON
   signs/
     halo-lit/      build.mjs (construction, halo, exploded offsets, inspector text) + its own CLAUDE.md
     <next-type>/   one folder per sign type, same shape
@@ -94,11 +94,10 @@ flowchart LR
 
 ## Backlog (ordered)
 
-1. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
-2. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-3. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
-4. **More sign types**, one at a time (see above).
-5. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
+1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
+2. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
+3. **More sign types**, one at a time (see above).
+4. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 

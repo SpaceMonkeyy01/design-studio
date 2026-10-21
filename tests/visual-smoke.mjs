@@ -42,6 +42,16 @@ const steps = [
   ['inspect-studs', async () => { await click('[data-mode=exploded]'); await click('[data-part=studs]'); }],
 ];
 for (const [name, act] of steps) { await act(); await snap(String(n++).padStart(2, '0') + '-' + name); }
-console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000).map(r => r.step), console: logs }, null, 2));
+// Cutout layers (lit, front): sign PNG must have transparent corners and opaque letters; halo PNG must hold soft glow.
+// Saved to test-output/cutout/ so test:compare (top-level PNGs only) ignores them.
+{ await click('[data-mode=assembled]'); await click('[data-view=front]'); fs.mkdirSync(path.join(out, 'cutout'), { recursive: true });
+  t = Date.now(); const downloads = []; const got = new Promise(r => page.on('download', d => { downloads.push(d); if (downloads.length === 2) r(); }));
+  await click('#cutout'); await got; const files = {};
+  for (const d of downloads) { const f = path.join(out, 'cutout', d.suggestedFilename()); await d.saveAs(f); files[/-halo\.png$/.test(f) ? 'halo' : 'sign'] = f; }
+  const stats = async f => page.evaluate(async src => { const im = new Image(); im.src = src; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); const d = x.getImageData(0, 0, c.width, c.height).data; let opaque = 0, partial = 0; for (let i = 3; i < d.length; i += 4) { if (d[i] === 255) opaque++; else if (d[i]) partial++; } const corner = [0, c.width - 1, (c.height - 1) * c.width, c.height * c.width - 1].map(p => d[p * 4 + 3]); return { w: c.width, h: c.height, opaque, partial, corner }; }, 'data:image/png;base64,' + fs.readFileSync(f).toString('base64'));
+  const sign = await stats(files.sign), halo = await stats(files.halo);
+  const ok = sign.w === 3840 && sign.corner.every(a => a === 0) && sign.opaque > 1e5 && halo.corner.every(a => a === 0) && halo.partial > 1e5;
+  results.push({ step: 'cutout layers', ms: Date.now() - t, ok, sign, halo }); }
+console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
