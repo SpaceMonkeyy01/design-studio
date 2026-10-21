@@ -4,7 +4,7 @@ Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D s
 No backend, no API keys, no build step. Plain ES modules + vendored Three.js r186 + Clipper 6.4.2.
 
 Origin: Halo Studio, built in ChatGPT by a teammate and handed over on 2026-10-19 (`docs/handover/`). Everything after the original history was made by us.
-Today only **halo-lit** is implemented. Other sign types are added one at a time (see "Adding a sign type").
+Implemented: **halo-lit** and **face-lit**, chosen with the Sign type control. Other sign types are added one at a time (see "Adding a sign type").
 
 ## Run
 
@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All 9 screenshots match`.
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit).
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 
@@ -32,24 +32,27 @@ app/
   index.html, style.css
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
-    artwork.mjs    mask cleanup, return rings (Clipper)
+    artwork.mjs    mask cleanup, return rings, region offsets (Clipper)
     geometry.mjs   trace, smooth, group loops
     routing.mjs    distance field, mounts, LED layout, wire A*
     materials.mjs  finishes, LED colour, env map, artwork colours
     scene.mjs      renderer, lights, camera framing, wall
+    shapes.mjs     artwork space → world: pos, shapes, UVs, contours, flat caps
+    hardware.mjs   part groups, LED modules + routed wiring, threaded studs, drain markers
     export.mjs     4K PNG, cutout layers (difference matte), download, contact sheet, project JSON
   signs/
-    halo-lit/      build.mjs (construction, halo, exploded offsets, inspector text) + its own CLAUDE.md
+    halo-lit/      build.mjs (construction, halo, exploded offsets, inspector text, `sign` interface) + its own CLAUDE.md
+    face-lit/      same shape; no halo, lit acrylic face, trim cap, sealed back
     <next-type>/   one folder per sign type, same shape
 tests/
   fixtures/        shared test logos (add one per artwork bug fixed)
-  signs/<type>/    per-type tests (none yet; halo-lit is covered by runtime-smoke + visual-smoke)
+  signs/<type>/    per-type tests (face-lit/build-check.mjs; halo-lit is covered by runtime-smoke + visual-smoke)
 gemini/            compositing prompts + AI Studio apps (NOT 3D code)
 qc/                Airtable QC notes + report scripts
 docs/handover/     original ChatGPT handover (read-only history)
 ```
 
-Still halo-specific inside `app.js` (move behind a sign interface when the second type starts): halo opacity factor (×1.15) in refreshLighting/intensity, `'Halo-lit'` status text, part names in setMode/inspectPart. `pos`/`shapes`/`uvGeometry` live in `signs/halo-lit/build.mjs` for now; move them to `core/` before a second type uses them.
+**Sign interface.** Each `signs/<type>/build.mjs` exports `sign`: `{id, label, standardDepth, build(art,s,isLit,renderer) → {root, parts}, halo (builder or null), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers types in `SIGNS` and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
 
 ## Architecture
 
@@ -63,9 +66,9 @@ flowchart LR
   O --> G[gemini/ compositing → QC in Airtable]
 ```
 
-- World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. Face at z≈0, returns go to −z, then acrylic, gap, wall.
+- World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. The front of the sign is at z≈0 and everything else goes to −z. Halo-lit: face, returns, acrylic back, gap, wall. Face-lit: trim + acrylic face, returns, sealed back, wall (no gap).
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
-- The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive.
+- The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff).
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.
 - A "letter" is a raster connected component, not a semantic glyph.
 
@@ -73,7 +76,7 @@ flowchart LR
 
 - Free only: no paid render or AI services. No paid tools.
 - ≤ 5 s upload → usable frame (measure with `npm run test:visual` on a real GPU).
-- Defaults: 1″ depth, ¼″ wall gap, 6500K LEDs, 3/16″ acrylic back, 3–4 mounts per letter, ≥3 L-clamps per letter with 2 screws each. Power supply and junction box stay hidden behind the wall.
+- Halo-lit defaults: 1″ depth, ¼″ wall gap, 6500K LEDs, 3/16″ acrylic back, 3–4 mounts per letter, ≥3 L-clamps per letter with 2 screws each. Face-lit defaults are in `signs/face-lit/CLAUDE.md`. Power supply and junction box stay hidden behind the wall.
 - Units are inches. Currency USD.
 - Keep every live control working (orbit, views, finishes, LEDs, wall photo, modes, inspector, exports, save/load).
 
@@ -96,8 +99,9 @@ flowchart LR
 
 1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
 2. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
-3. **More sign types**, one at a time (see above).
-4. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
+3. **Raceway and backer mounting** in `core/` (face-lit needs them, halo-lit will want them). Waiting on inches from the shop; see `signs/face-lit/CLAUDE.md`.
+4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
+5. Smaller: exploded view clutter at ¾ angle (worse with face-lit's 5″ cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 

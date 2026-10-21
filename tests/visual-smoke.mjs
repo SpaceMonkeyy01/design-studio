@@ -52,6 +52,28 @@ for (const [name, act] of steps) { await act(); await snap(String(n++).padStart(
   const sign = await stats(files.sign), halo = await stats(files.halo);
   const ok = sign.w === 3840 && sign.corner.every(a => a === 0) && sign.opaque > 1e5 && halo.corner.every(a => a === 0) && halo.partial > 1e5;
   results.push({ step: 'cutout layers', ms: Date.now() - t, ok, sign, halo }); }
+// Face-lit (screenshots 10+). The face must read as lit, not paint: brighter than the wall and, for colour, still saturated.
+// Shot with and without the wall: sign pixels are identical in both, wall pixels change. Face = sign pixels that are not dark (trim).
+const faceVsWall = async () => { await page.waitForTimeout(1000); const clip = await stage.boundingBox(), withWall = await page.screenshot({ clip });
+  await page.evaluate(() => { const e = document.getElementById('showwall'); e.checked = false; }); await page.waitForTimeout(800); const noWall = await page.screenshot({ clip });
+  await page.evaluate(() => { document.getElementById('showwall').checked = true; }); await page.waitForTimeout(500);
+  return page.evaluate(async ([a, b]) => { const load = async src => { const im = new Image(); im.src = src; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height).data; };
+    const A = await load(a), B = await load(b), face = [], wall = [], med = v => v.sort((p, q) => p - q)[v.length >> 1] ?? 0;
+    for (let i = 0; i < A.length; i += 16) { const diff = Math.max(Math.abs(A[i] - B[i]), Math.abs(A[i + 1] - B[i + 1]), Math.abs(A[i + 2] - B[i + 2])), r = A[i] / 255, g = A[i + 1] / 255, bl = A[i + 2] / 255, v = Math.max(r, g, bl), sat = v ? 1 - Math.min(r, g, bl) / v : 0, lum = .2126 * r + .7152 * g + .0722 * bl;
+      if (diff <= 2 && v > .3) face.push([v, sat, lum]); else if (diff > 12) wall.push([v, sat, lum]); }
+    const pick = (list, k) => med(list.map(p => p[k]));
+    return { facePixels: face.length, faceValue: pick(face, 0), faceSat: pick(face, 1), faceLum: pick(face, 2), wallValue: pick(wall, 0), wallLum: pick(wall, 2) };
+  }, ['data:image/png;base64,' + withWall.toString('base64'), 'data:image/png;base64,' + noWall.toString('base64')]); };
+const uploadAndWait = async f => { const name = path.basename(f); t = Date.now(); await page.setInputFiles('#file', f); await page.waitForFunction(n => { const s = document.getElementById('uploadstatus').textContent; return s.includes(n) && !/Loading/.test(s); }, name); return Date.now() - t; };
+{ await click('[data-mode=assembled]'); await choose('wall', 'plaster'); await choose('signtype', 'face-lit'); await page.waitForFunction(() => /^Face-lit/.test(document.getElementById('status').textContent)); await click('[data-view=front]');
+  const white = await faceVsWall(); await snap('10-face-lit-white');
+  results.push({ step: 'face-lit white face brighter than wall', ok: white.facePixels > 1000 && white.faceLum > white.wallLum, ...white });
+  await click('[data-mode=exploded]'); await snap('11-face-lit-exploded'); await click('[data-mode=internal]'); await snap('12-face-lit-inside'); await click('[data-mode=assembled]');
+  const ms = await uploadAndWait(fixtures[0]); await click('[data-view=front]'); const colour = await faceVsWall(); await snap('13-face-lit-colour');
+  results.push({ step: 'face-lit upload ' + path.basename(fixtures[0]), ms, ok: colour.facePixels > 1000 && colour.faceValue > colour.wallValue && colour.faceSat > .45, ...colour });
+  await click('#unlit'); await snap('14-face-lit-unlit'); await click('#lit');
+  const accent = fileURLToPath(new URL('fixtures/logo-dark-accent.png', import.meta.url)); results.push({ step: 'face-lit upload logo-dark-accent.png', ms: await uploadAndWait(accent) }); await click('[data-view=front]'); await snap('15-face-lit-dark-accent');
+  await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
