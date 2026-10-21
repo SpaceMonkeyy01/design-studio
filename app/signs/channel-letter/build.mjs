@@ -119,7 +119,7 @@ export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=docume
 
 // Sign-type interface read by app.js, one per built construction (the studio's Sign type control).
 export const signs={
- 'halo-lit':{id:'halo-lit',label:'Halo-lit',config:CONFIGS['halo-lit'],standardDepth:1,defaultIntensity:75,
+ 'halo-lit':{id:'halo-lit',label:'Halo-lit',config:CONFIGS['halo-lit'],mountings:['flush'],standardDepth:1,defaultIntensity:75,
   build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['halo-lit']),glow:haloGlow,
   // Wall sits behind the acrylic back, across the wall gap.
   wallDepth:s=>{const inch=4/s.width;return s.depth*inch+.1875*inch;},wallGap:s=>s.gap*(4/s.width),
@@ -137,7 +137,7 @@ export const signs={
   finishParts:['face','returns'],internalHidden:['face'],assembledHidden:['clamps'],singleParts:['leds','studs','drain','clamps'],
   hints:{assembled:'Opaque metal face and returns. Light exits through the acrylic back and reflects from the wall.',exploded:'Separated layers reveal your metal shell, rear-facing LEDs, acrylic back and wall mounting.',internal:'Face removed to inspect the LEDs and wiring. The LEDs point towards the acrylic back.'},
   specs:(s,led)=>s.depth+'″ depth · 3/16″ acrylic · '+led},
- 'face-lit':{id:'face-lit',label:'Face-lit',config:CONFIGS['face-lit'],standardDepth:5,defaultIntensity:40,
+ 'face-lit':{id:'face-lit',label:'Face-lit',config:CONFIGS['face-lit'],mountings:['flush'],standardDepth:5,defaultIntensity:40,
   build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['face-lit']),glow:faceGlow,
   // Flush: the wall touches the sealed back.
   wallDepth:s=>(s.depth+BACK)*(4/s.width),wallGap:()=>0,

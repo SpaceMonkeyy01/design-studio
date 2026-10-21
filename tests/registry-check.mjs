@@ -1,5 +1,6 @@
 // app/registry.mjs: every sign type the studio sells. Data is provided, not edited here; this only checks it is well formed.
 import {SIGNS, BUILDS, MOUNTINGS, STRUCTURES, stats} from '../app/registry.mjs';
+import {MOUNTINGS as CORE_MOUNTINGS, mounting} from '../app/core/mounting.mjs';
 const fail = msg => { throw new Error('registry: ' + msg); };
 const ids = SIGNS.map(s => s.id);
 if (new Set(ids).size !== ids.length) fail('duplicate ids');
@@ -10,4 +11,7 @@ for (const s of SIGNS) {
   if (s.structure && !STRUCTURES[s.structure]) fail(`${s.id}: unknown structure ${s.structure}`);
   if (s.depth && !(s.depth.min <= s.depth.std && s.depth.std <= s.depth.max)) fail(`${s.id}: depth std outside min–max`);
 }
+// core/mounting.mjs declares exactly the studio's mountings, by the registry's names.
+if (CORE_MOUNTINGS.map(m => m.name).join('|') !== MOUNTINGS.join('|')) fail('core/mounting.mjs does not match the registry MOUNTINGS');
+if (!mounting('flush')?.built || CORE_MOUNTINGS.filter(m => m.built).length !== 1) fail('only Flush/Stud should be built until the shop sends dimensions');
 console.log('REGISTRY_OK', JSON.stringify(stats()));

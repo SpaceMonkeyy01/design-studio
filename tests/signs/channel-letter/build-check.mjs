@@ -55,6 +55,9 @@ unlit.root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unl
 const trimless = sign.build(art, {...settings, trim: 'none'}, true, renderer);
 if (trimless.parts.trim.children.length) fail('trimless still has a trim cap');
 if (trimless.parts.face.children.length !== pieces) fail('trimless lost face pieces');
+// Every mounting a config offers must be built in core/mounting.mjs (flush only, until raceway / backers get dimensions).
+const {mounting} = await import('../../../app/core/mounting.mjs');
+for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting(m)?.built)) fail(id + ' offers an unbuilt mounting');
 // Config switches: the two built constructions resolve; anything else is refused, not half-built.
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
