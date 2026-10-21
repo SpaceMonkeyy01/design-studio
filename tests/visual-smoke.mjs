@@ -74,6 +74,14 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   await click('#unlit'); await snap('14-face-lit-unlit'); await click('#lit');
   const accent = fileURLToPath(new URL('fixtures/logo-dark-accent.png', import.meta.url)); results.push({ step: 'face-lit upload logo-dark-accent.png', ms: await uploadAndWait(accent) }); await click('[data-view=front]'); await snap('15-face-lit-dark-accent');
   await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
+// Build board (app/dashboard.html): every built variant links into the studio. Click through to halo-lit and face-lit Premium.
+// Screenshot in test-output/dashboard/ (not compared: it loads Google Fonts over the network).
+{ fs.mkdirSync(path.join(out, 'dashboard'), { recursive: true }); await page.goto(url + 'dashboard.html'); await page.waitForSelector('a.v');
+  const links = await page.$$eval('a.v', as => as.map(a => a.getAttribute('href'))); await page.screenshot({ path: path.join(out, 'dashboard', 'board.png'), fullPage: true });
+  const open = async (needle, sign) => { await page.goto(url + 'dashboard.html'); await page.waitForSelector('a.v'); await page.click(`a.v[href*="${needle}"] >> nth=0`);
+    await page.waitForFunction(s => new RegExp('^' + s).test(document.getElementById('status').textContent), sign); return page.evaluate(() => ({ url: location.search, sign: document.getElementById('signtype').value, trim: document.getElementById('trim').value })); };
+  const halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit');
+  results.push({ step: 'dashboard click-through', ok: links.length === 6 && links.every(h => /^index\.html\?type=/.test(h)) && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, halo, premium }); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
