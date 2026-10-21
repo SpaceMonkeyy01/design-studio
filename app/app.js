@@ -5,10 +5,9 @@ import {distanceField,componentLabels} from './core/routing.mjs?v=10';
 import {ledColour,finishMaterial,artworkColour,artworkMaterial} from './core/materials.mjs?v=11';
 import {createRenderer,setupScene,fitObject,createWall,wallBackdrop} from './core/scene.mjs?v=11';
 import {download,imagePNG,mattePNG,glowPNG,contactSheet,projectJSON} from './core/export.mjs?v=11';
-import {sign as haloLit} from './signs/halo-lit/build.mjs?v=15';
-import {sign as faceLit} from './signs/face-lit/build.mjs?v=3';
-// Sign types by id. app.js only talks to a type through this interface (see signs/*/build.mjs `sign`).
-const SIGNS={'halo-lit':haloLit,'face-lit':faceLit};
+import {signs as channelLetter} from './signs/channel-letter/build.mjs?v=1';
+// Sign types by id (the Sign type control). app.js only talks to a type through this interface (see signs/*/build.mjs).
+const SIGNS={...channelLetter},haloLit=SIGNS['halo-lit'];
 const $=id=>document.getElementById(id), toast=s=>{$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('show'),3500);};
 let renderer,scene,camera,orbit,root,wallMesh,haloMesh,art,parts={},mode='assembled',isLit=true,shots=[],busy=false,loadSerial=0,focusRoot=null,focusName=null,focusSaved=null,studioLights=[],wallPhoto=null,builtState=null,sign=haloLit;
 const hiddenParts=new Set();
