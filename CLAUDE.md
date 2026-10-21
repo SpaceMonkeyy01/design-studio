@@ -29,7 +29,8 @@ Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on th
 
 ```
 app/
-  index.html, style.css
+  index.html, style.css   index.html?type=<registry id> opens that variant
+  registry.mjs     every sign type x variant the studio sells (provided data: do not edit, report problems)
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
     artwork.mjs    mask cleanup, return rings, region offsets (Clipper)
@@ -69,6 +70,7 @@ flowchart LR
 ```
 
 - World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. The front of the sign is at z≈0 and everything else goes to −z. Halo-lit: face, returns, acrylic back, gap, wall. Face-lit: trim + acrylic face, returns, sealed back, wall (no gap).
+- `index.html?type=<registry id>` opens one studio variant: `app.js` finds the row in `registry.mjs` and the construction's `VARIANTS` entry (sign type + allowed select options, e.g. face-lit Premium = metallic trims). Unknown, unbuilt or missing ids keep the default and say so in a toast. The registry carries no construction config; that table lives with the construction.
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
 - The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff), plus a face glow plane in front of them.
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.

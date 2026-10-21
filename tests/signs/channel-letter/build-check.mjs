@@ -13,7 +13,8 @@ const {cleanArtworkMask} = await import('../../../app/core/artwork.mjs');
 const {traceMask, groupLoops, smoothLoops} = await import('../../../app/core/geometry.mjs');
 const {distanceField, componentLabels} = await import('../../../app/core/routing.mjs');
 const {isTinyPiece} = await import('../../../app/core/hardware.mjs');
-const {signs, buildChannelLetter, CONFIGS} = await import('../../../app/signs/channel-letter/build.mjs');
+const {signs, buildChannelLetter, CONFIGS, VARIANTS} = await import('../../../app/signs/channel-letter/build.mjs');
+const {SIGNS: REGISTRY} = await import('../../../app/registry.mjs');
 const sign = signs['face-lit'];
 
 const fixture = JSON.parse(fs.readFileSync(new URL('../../fixtures/halo-halo-mask.json', import.meta.url)));
@@ -55,6 +56,11 @@ unlit.root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unl
 const trimless = sign.build(art, {...settings, trim: 'none'}, true, renderer);
 if (trimless.parts.trim.children.length) fail('trimless still has a trim cap');
 if (trimless.parts.face.children.length !== pieces) fail('trimless lost face pieces');
+// ?type= table: exactly the registry's built channel-letter rows, each opening a real sign with real select options.
+const built = REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 'done').map(r => r.id).sort().join();
+if (Object.keys(VARIANTS).sort().join() !== built) fail('VARIANTS must list exactly the registry rows with build channel-letter and status done');
+for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
+  for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t); }
 // Every mounting a config offers must be built in core/mounting.mjs (flush only, until raceway / backers get dimensions).
 const {mounting} = await import('../../../app/core/mounting.mjs');
 for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting(m)?.built)) fail(id + ' offers an unbuilt mounting');

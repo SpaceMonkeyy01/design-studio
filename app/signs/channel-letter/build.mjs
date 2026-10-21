@@ -117,6 +117,17 @@ export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return g
 export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
  return glowPlane(c,height,{core:GLOW_CORE*inch,wide:GLOW_WIDE*inch,opacity:isLit?s.intensity*GLOW:0,opacityFactor:GLOW,z:(TRIM+.05)*inch,front:true});}
 
+// Registry ids (app/registry.mjs) this construction builds → the sign to open and, per studio tier, the trims offered.
+// Face-lit Standard = plastic trim cap; Premium = metallic trim or trimless (pricing names: "Plastic Trim" / "Metallic Trim").
+const STANDARD_TRIMS=['artwork','black','white'],PREMIUM_TRIMS=['silver','gold','bronze','none'];
+export const VARIANTS={
+ 'illuminated-dimensional-letters-halo-lit-back-lit':{sign:'halo-lit'},
+ 'illuminated-channel-letters-halo-lit-back-lit':{sign:'halo-lit'},
+ 'illuminated-dimensional-letters-face-lit-standard-channel-letter':{sign:'face-lit',options:{trim:STANDARD_TRIMS}},
+ 'illuminated-channel-letters-face-lit-standard-channel-letter':{sign:'face-lit',options:{trim:STANDARD_TRIMS}},
+ 'illuminated-dimensional-letters-face-lit-premium-channel-letters':{sign:'face-lit',options:{trim:PREMIUM_TRIMS}},
+ 'illuminated-channel-letters-face-lit-premium-channel-letters':{sign:'face-lit',options:{trim:PREMIUM_TRIMS}},
+};
 // Sign-type interface read by app.js, one per built construction (the studio's Sign type control).
 export const signs={
  'halo-lit':{id:'halo-lit',label:'Halo-lit',config:CONFIGS['halo-lit'],mountings:['flush'],standardDepth:1,defaultIntensity:75,
