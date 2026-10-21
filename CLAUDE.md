@@ -21,6 +21,8 @@ npm run test:compare      # after the change: pixel diff test-output/ vs test-ba
 
 Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All 9 screenshots match`.
 
+Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
+
 `app/` is the source (no build step). Bump `?v=N` in `index.html` / module imports whenever you change a module, or browsers will cache the old one.
 
 ## Layout
@@ -92,13 +94,12 @@ flowchart LR
 
 ## Backlog (ordered)
 
-1. **Baseline on a real GPU.** Run both test commands, record upload→built time and screenshots. Everything below is judged against it.
-2. **Halo is faint on light walls.** Tune blur/opacity in `buildWall()` against the gap.
-3. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
-4. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-5. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp, split `app.js` into `core/` + `signs/halo-lit/` with tests green before and after. See `docs/handover/OPTIMIZATION.md`.
-6. **More sign types**, one at a time (see above).
-7. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
+1. **Halo is faint on light walls.** Tune blur/opacity in `buildWall()` against the gap.
+2. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
+3. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
+4. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
+5. **More sign types**, one at a time (see above).
+6. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 
