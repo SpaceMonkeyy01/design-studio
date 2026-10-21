@@ -64,6 +64,7 @@ flowchart LR
 - World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. Face at z≈0, returns go to −z, then acrylic, gap, wall.
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
 - The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive.
+- Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.
 - A "letter" is a raster connected component, not a semantic glyph.
 
 ## Hard requirements (from the original requester; don't silently break them)
@@ -92,13 +93,12 @@ flowchart LR
 ## Backlog (ordered)
 
 1. **Baseline on a real GPU.** Run both test commands, record upload→built time and screenshots. Everything below is judged against it.
-2. **Mirror finishes look dull.** Mirror gold reads as olive-brown paint: the synthetic env map (`init()` canvas → PMREM) has too little bright structure. Needs a better procedural or free HDRI environment, judged on a real GPU. Matters for Silver/Gold/Bronze polished.
-3. **Halo is faint on light walls.** Tune blur/opacity in `buildWall()` against the gap.
-4. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
-5. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-6. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp, split `app.js` into `core/` + `signs/halo-lit/` with tests green before and after. See `docs/handover/OPTIMIZATION.md`.
-7. **More sign types**, one at a time (see above).
-8. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost.
+2. **Halo is faint on light walls.** Tune blur/opacity in `buildWall()` against the gap.
+3. **Export for compositing.** Transparent PNG of the sign + halo as a separate layer, at a chosen camera angle. This is the bridge to Gemini.
+4. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
+5. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp, split `app.js` into `core/` + `signs/halo-lit/` with tests green before and after. See `docs/handover/OPTIMIZATION.md`.
+6. **More sign types**, one at a time (see above).
+7. Smaller: exploded view clutter at ¾ angle; `exitFocus()` loses a white wall; stale "Exactly two mounting assemblies" comment in `build()` (real rule is 3–4); SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 
