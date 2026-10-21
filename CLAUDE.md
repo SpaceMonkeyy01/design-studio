@@ -9,7 +9,7 @@ Implemented: **halo-lit** and **face-lit**, both from the one `channel-letter` c
 ## Run
 
 ```sh
-npm start                 # serves app/ at http://127.0.0.1:8080 (needs a WebGL2 browser); build board at /dashboard.html
+npm start                 # serves app/ at http://127.0.0.1:8080: build board (landing), studio at /studio.html (needs WebGL2)
 npm test                  # CPU geometry + mocked runtime tests (fast, no browser)
 npm install && npx playwright install chromium   # once, for the visual test
 npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/ (+ cutout/ layers, alpha-checked)
@@ -23,15 +23,15 @@ Screenshots are deterministic on one machine (two runs are pixel-identical), so 
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 
-`app/` is the source (no build step). Bump `?v=N` in `index.html` / module imports whenever you change a module, or browsers will cache the old one.
+`app/` is the source (no build step). Bump `?v=N` in `studio.html` / module imports whenever you change a module, or browsers will cache the old one.
 
 ## Layout
 
 ```
 app/
-  index.html, style.css   index.html?type=<registry id> opens that variant
+  index.html       landing page: build board from registry.mjs; "Open Design Studio" → studio.html, built variants → studio.html?type=<id>
+  studio.html, style.css   the 3D studio; studio.html?type=<registry id> opens that variant
   registry.mjs     every sign type x variant the studio sells (provided data: do not edit, report problems)
-  dashboard.html   build board from registry.mjs; built variants link to index.html?type=<id>
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
     artwork.mjs    mask cleanup, return rings, region offsets (Clipper)
@@ -71,7 +71,7 @@ flowchart LR
 ```
 
 - World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. The front of the sign is at z≈0 and everything else goes to −z. Halo-lit: face, returns, acrylic back, gap, wall. Face-lit: trim + acrylic face, returns, sealed back, wall (no gap).
-- `index.html?type=<registry id>` opens one studio variant: `app.js` finds the row in `registry.mjs` and the construction's `VARIANTS` entry (sign type + allowed select options, e.g. face-lit Premium = metallic trims). Unknown, unbuilt or missing ids keep the default and say so in a toast. The registry carries no construction config; that table lives with the construction.
+- `studio.html?type=<registry id>` opens one studio variant: `app.js` finds the row in `registry.mjs` and the construction's `VARIANTS` entry (sign type + allowed select options, e.g. face-lit Premium = metallic trims). Unknown, unbuilt or missing ids keep the default and say so in a toast. The registry carries no construction config; that table lives with the construction.
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
 - The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff), plus a face glow plane in front of them.
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.

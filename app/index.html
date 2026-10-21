@@ -1,13 +1,275 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Halo Studio | Artwork to channel letters</title><meta name="description" content="Explore halo-lit channel letters in 3D, with artwork finishes, illumination and internal construction."><link rel="stylesheet" href="style.css?v=9"><script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script></head><body>
-<header><a class="brand" href="#"><span class="brandmark">H</span> HALO <span class="light">STUDIO</span></a><span class="topmeta">ARTWORK → CHANNEL LETTERS</span><button id="reference" class="quiet">Construction reference ↗</button></header>
-<main><aside class="controls"><div class="eyebrow">YOUR SIGN, IN EVERY DIMENSION</div><h1>From artwork.<br>To atmosphere.</h1><p class="intro">A workspace for channel letters.</p><label>Sign type<select id="signtype"><option value="halo-lit">Halo-lit · reverse channel letters</option><option value="face-lit">Face-lit · front-lit channel letters</option></select></label>
-<section><div class="sectiontitle"><span>01</span> Artwork</div><button id="testartwork" class="wide quiet">Load HALO HALO test artwork</button><label class="upload" id="drop"><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><b>↑ &nbsp; Upload your artwork</b><small>PNG, JPG, WebP or SVG · up to 15 MB</small></label><div id="uploadstatus" class="helper" role="status" aria-live="polite" hidden></div><div class="fileline"><span id="filename">West · sample artwork</span><button id="sample" class="textbtn">Reset sample</button></div><label>Background removal<select id="background"><option value="auto">Auto · remove white background</option><option value="alpha">Keep transparency / all colours</option><option value="dark">Remove dark background</option></select></label><small class="helper">Use transparent artwork or flat colours for clean contours. Convert SVG text to paths before uploading.</small></section>
-<section id="appearance"><div class="sectiontitle"><span>02</span> Finish & light</div><div data-sign="halo-lit"><div class="swatchtitle">FACE & RETURN FINISH</div><div class="finishswatches"><button data-finish="artwork" title="Match artwork"><i class="artwork"></i><span>Artwork</span></button><button data-finish="silver-brushed" title="Brushed silver"><i class="silver brushed"></i><span>Brushed silver</span></button><button data-finish="silver-mirror" title="Mirror silver"><i class="silver mirror"></i><span>Mirror silver</span></button><button data-finish="gold-brushed" title="Brushed gold"><i class="gold brushed"></i><span>Brushed gold</span></button><button data-finish="gold-mirror" title="Mirror gold"><i class="gold mirror"></i><span>Mirror gold</span></button><button data-finish="black" title="Painted black"><i class="black"></i><span>Black</span></button></div><label>All finishes<select id="finish"><option value="artwork">Match artwork colours</option><option value="silver-brushed">Brushed silver</option><option value="silver-mirror">Mirror silver</option><option value="gold-brushed">Brushed gold</option><option value="gold-mirror">Mirror gold</option><option value="bronze-brushed">Brushed bronze</option><option value="bronze-mirror">Mirror bronze</option><option value="black">Painted black</option><option value="white">Painted white</option><option value="custom">Custom painted colour</option></select></label><label id="sheenfield">Paint sheen<select id="sheen"><option value="matte">Matte</option><option value="satin" selected>Satin</option><option value="gloss">Gloss</option></select></label><label id="paintfield" hidden>Paint colour<input id="paint" type="color" value="#263c68"></label></div><div data-sign="face-lit" hidden><label>Face<select id="facetype"><option value="film">White acrylic + vinyl · multi-colour</option><option value="tinted">Tinted acrylic · one colour/letter</option></select></label><label>Trim cap<select id="trim"><option value="artwork" selected>Plastic trim cap · match artwork · standard</option><option value="black">Black plastic trim cap</option><option value="white">White plastic trim cap</option><option value="silver">Brushed silver metal trim · premium</option><option value="gold">Brushed gold metal trim · premium</option><option value="bronze">Brushed bronze metal trim · premium</option><option value="none">Trimless</option></select></label><label>Returns<select id="returns"><option value="artwork">Match artwork colours</option><option value="white">Painted white</option><option value="black">Painted black</option></select></label></div><div class="swatchtitle">LED COLOUR</div><div class="ledswatches"><button data-led="2700">2700K</button><button data-led="3000">3000K</button><button data-led="4000">4000K</button><button data-led="5000">5000K</button><button data-led="6500" class="selected">6500K</button><button data-led="rgb">Custom</button></div><div class="rgbpresets"><button data-led="red" style="--led:#ff3535" aria-label="Red LEDs"></button><button data-led="amber" style="--led:#ffc04b" aria-label="Amber LEDs"></button><button data-led="green" style="--led:#4ddd7b" aria-label="Green LEDs"></button><button data-led="blue" style="--led:#547df2" aria-label="Blue LEDs"></button><button data-led="purple" style="--led:#ac6eec" aria-label="Purple LEDs"></button><button data-led="pink" style="--led:#ff76b8" aria-label="Pink LEDs"></button></div><label>All LED shades<select id="led"><option value="6500">6500K · cool white — standard</option><option value="2200">2200K · amber white</option><option value="2700">2700K · warm white</option><option value="3000">3000K · warm white</option><option value="3500">3500K · warm neutral</option><option value="4000">4000K · neutral white</option><option value="4500">4500K · neutral cool</option><option value="5000">5000K · daylight</option><option value="5700">5700K · daylight white</option><option value="7500">7500K · ice white</option><option value="10000">10000K · blue white</option><option value="cct">Custom white temperature</option><option value="red">Red</option><option value="amber">Amber</option><option value="green">Green</option><option value="blue">Blue</option><option value="purple">Purple</option><option value="pink">Pink</option><option value="rgb">Custom RGB colour</option></select></label><label id="cctfield" hidden>White temperature (K)<input id="cct" type="number" min="1800" max="12000" value="6500" step="100"></label><label id="rgbfield" hidden>Custom LED colour<input id="rgb" type="color" value="#80bfff"></label><label class="rangeline">Light intensity <output id="intensityout">75%</output><input id="intensity" type="range" min="0" max="100" value="75"></label><label data-sign="halo-lit">Rear acrylic<select id="acrylictype"><option value="clear">Clear · transmits light</option><option value="frosted">Frosted · diffusing</option><option value="opal">Opal · diffusing white</option></select></label><label>Background wall<select id="wall"><option value="plaster">Warm plaster</option><option value="charcoal">Charcoal</option><option value="white">White</option><option value="concrete">Concrete</option><option value="custom">My wall photograph</option></select></label><label class="wallupload">↑ Upload your wall photograph<input id="wallfile" type="file" accept="image/png,image/jpeg,image/webp"></label><div id="walltools" hidden><div class="fileline"><span id="wallname"></span><button id="clearwall" class="textbtn">Remove wall</button></div><label class="rangeline">Wall photo scale<output id="wallscaleout">100%</output><input id="wallscale" type="range" min="50" max="200" value="100"></label></div></section><section><div class="sectiontitle"><span>03</span> Dimensions</div><div class="fields"><label>Overall width <span class="unit">in</span><input id="width" type="number" min="4" max="240" value="48" step="0.5"></label><label data-sign="halo-lit">Wall gap <span class="unit">in</span><input id="gap" type="number" min="0.25" max="6" value="0.25" step="0.25"></label></div><label>Mounts per letter<select id="mountcount"><option value="auto">Auto · 3–4 mounts</option><option value="3">3 mounts</option><option value="4">4 mounts</option></select></label><div class="standard"><span>Letter depth</span><b id="depthbadge">1″ standard</b></div><label class="check"><input id="customdepth" type="checkbox"> Use a custom depth</label><label id="depthfield" hidden>Custom depth (inches)<input id="depth" type="number" min="0.5" max="8" value="1" step="0.25"></label><small class="helper" data-sign="halo-lit">48″ sample width · ¼″ standard wall gap · both editable.</small><small class="helper" data-sign="face-lit" hidden>48″ sample width · 5″ standard depth · flush to the wall on threaded studs.</small></section>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Design Studio Build Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: summary band, category sections, one tile per sign type, variants as chips inside it. */
+:root{
+  --bg:#f4f5f3; --panel:#ffffff; --ink:#16181a; --muted:#6b7177; --line:#dfe2de;
+  --accent:#b4761a; --accent-soft:#f7ecd9; --on-accent:#ffffff;
+  --done:#2f7d55; --done-soft:#e3f0e8; --todo:#9aa0a6; --off:#d7dad6;
+  --sans:'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#15171a; --panel:#1d2024; --ink:#e9ebe8; --muted:#969ca3; --line:#2e3338;
+  --accent:#e0a955; --accent-soft:#38301f; --on-accent:#15171a;
+  --done:#58b483; --done-soft:#1e3028; --todo:#777d84; --off:#343a40;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#15171a; --panel:#1d2024; --ink:#e9ebe8; --muted:#969ca3; --line:#2e3338;
+  --accent:#e0a955; --accent-soft:#38301f; --on-accent:#15171a;
+  --done:#58b483; --done-soft:#1e3028; --todo:#777d84; --off:#343a40;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.45;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto;padding-block:28px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
 
-<button id="saveproject" class="wide quiet">↓ Save project settings</button><label class="loadproject textbtn">Load a saved project<input id="loadproject" type="file" accept=".json" hidden></label>
-</aside><div class="workspace"><div class="worktop"><div><span class="eyebrow">SMOOTH 3D · 4K EXPORT</span><h2 id="projectname">West / Halo-lit letters</h2></div><div class="topactions"><button id="presentation" class="quiet">⛶ Presentation</button><div class="lighting"><button id="lit" class="active">● Lit</button><button id="unlit">○ Unlit</button></div></div></div>
-<div id="stage"><canvas id="viewer" aria-label="Interactive 3D halo-lit sign preview"></canvas><div class="stagebadge"><span class="dot"></span><span id="status">Building artwork contours…</span></div><div class="viewmodes"><button class="active" data-mode="assembled">Assembled</button><button data-mode="exploded">Exploded</button><button data-mode="internal">Inside</button></div><div id="inspector" hidden><div><span class="eyebrow">COMPONENT INSPECTOR</span><h3 id="inspecttitle"></h3><p id="inspectdetail"></p></div><div class="inspectactions"><button id="inspectexport" class="primary">↓ Export 4K close-up</button><button id="exitfocus" class="quiet">← Full sign</button></div></div><div class="canvashelp">Drag to orbit · scroll to zoom · right-drag to pan</div><button class="reset" id="resetview" title="Reset camera">↺</button><div class="fallback" id="fallback" hidden>3D preview needs WebGL. Try a browser with hardware acceleration enabled.</div></div>
-<div class="viewbar"><div class="angles"><button data-view="front">Front</button><button data-view="left">Left ¾</button><button data-view="right" class="selected">Right ¾</button><button data-view="side">Side</button><button data-view="back">Back</button><button data-view="top">Top</button></div><label class="check"><input id="rotate" type="checkbox"> Auto rotate</label><label class="check"><input id="showwall" type="checkbox" checked> Wall</label><button id="export" class="primary">↓ Export 4K PNG</button><button id="cutout" class="quiet" title="Transparent sign + halo layers for compositing">↓ Cutout layers</button></div>
-<div class="under"><div class="construction"><div class="sectiontitle"><span>↳</span> Construction explorer</div><p id="modehint">Opaque metal face and returns. Light exits through the acrylic back and reflects from the wall.</p><div class="parts" id="partbuttons"></div><small class="helper">Click a component to inspect it in a close-up. Click a visible part in Exploded or Inside to inspect that specific item. Power supply and junction boxes remain behind the wall and are excluded. 3–4 mounting points per letter, distributed across its back. Internal component sizing, positions, wire routes and drain markers are illustrative; this is a visual model, not a fabrication or electrical plan.</small></div><div class="capture"><div class="sectiontitle"><span>↗</span> Client-ready views</div><p>Capture six angles in both lighting states.</p><button id="capture" class="wide primary">Generate 12-view sheet</button><small class="helper">4K captures. Current dimensions, materials and scene are retained.</small></div></div><div id="gallery" hidden><div class="gallerytop"><h3>Your angle collection</h3><button id="sheet" class="quiet">↓ Download contact sheet</button></div><div id="shots"></div></div>
-<footer><span>HALO STUDIO · 3D VISUAL STUDY</span><span id="specs">1″ depth · 3/16″ acrylic · 6500K</span></footer></div></main>
-<dialog id="refdialog"><button id="closemodal" class="quiet">Close ×</button><h2>Your construction reference</h2><img src="construction.png" alt="User-supplied sectional drawing of halo-lit channel letter construction"></dialog><div id="toast" role="status"></div><script src="vendor/clipper.js"></script><script type="module" src="app.js?v=24"></script></body></html>
+h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.mark{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);margin-right:3px;vertical-align:baseline}
+.sub{color:var(--muted);font-size:.84rem;margin:6px 0 20px;max-width:62ch}
+
+/* landing header: title + the way into the studio */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.cta{font-size:.86rem;font-weight:600;padding:9px 16px;border-radius:8px;text-decoration:none;
+  background:var(--accent);color:var(--on-accent);white-space:nowrap}
+.cta:hover{filter:brightness(1.08)}
+
+/* summary */
+.summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;margin-bottom:20px}
+.figs{display:flex;flex-wrap:wrap;gap:20px 34px;margin-bottom:13px}
+.fig .n{font-family:var(--mono);font-size:1.55rem;font-weight:600;line-height:1;
+  font-variant-numeric:tabular-nums;display:block}
+.fig .l{font-size:.71rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  margin-top:5px;display:block}
+.fig.ok .n{color:var(--done)}
+.bar{height:7px;border-radius:4px;background:var(--off);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--done)}
+
+/* controls */
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center}
+.chip{font:inherit;font-size:.78rem;padding:6px 12px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--on-accent);font-weight:600}
+.spacer{flex:1 1 20px}
+input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:8px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:0;flex:0 1 230px}
+.chip:focus-visible,input:focus-visible,a:focus-visible,.cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.modes{display:flex;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.modes .chip{border:0;border-radius:0;padding:6px 14px}
+
+/* category sections */
+.cat{margin-top:26px}
+.cat>h2{margin:0 0 11px;font-size:.76rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;gap:10px}
+.cat>h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.cat>h2 .c{font-family:var(--mono);letter-spacing:0;text-transform:none;
+  font-variant-numeric:tabular-nums}
+
+/* sign type tiles */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 15px 13px;
+  display:flex;flex-direction:column;gap:9px;min-width:0}
+.tile.allDone{border-color:var(--done)}
+.thead{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.thead b{font-size:.92rem;font-weight:600;line-height:1.3;flex:1;min-width:0;overflow-wrap:anywhere}
+.ratio{font-family:var(--mono);font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:nowrap;padding-top:2px}
+.tile.allDone .ratio{color:var(--done);font-weight:600}
+.tbar{height:4px;border-radius:3px;background:var(--off);overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--done)}
+.facts{display:flex;flex-wrap:wrap;gap:4px 6px;font-family:var(--mono);font-size:.69rem;color:var(--muted)}
+.fact{border:1px solid var(--line);border-radius:4px;padding:1px 5px;white-space:nowrap}
+.fact.build{font-family:var(--sans);border-color:var(--accent);color:var(--accent)}
+.fact.si{border-style:dashed}
+.vars{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
+.v{font-size:.73rem;padding:3px 8px;border-radius:5px;border:1px solid var(--line);
+  color:var(--muted);text-decoration:none;display:inline-block;max-width:100%;overflow-wrap:anywhere}
+a.v{background:var(--done-soft);border-color:var(--done);color:var(--done);font-weight:600}
+a.v:hover{background:var(--done);color:var(--panel)}
+.v.none{border-style:dashed}
+.empty{color:var(--muted);font-size:.85rem;padding:26px 0;text-align:center}
+footer{margin-top:30px;font-size:.74rem;color:var(--muted);text-wrap:balance;max-width:72ch}
+footer code{font-family:var(--mono);font-size:.95em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1><span class="mark"></span> Design Studio build board</h1>
+    <a class="cta" href="studio.html">Open Design Studio →</a>
+  </div>
+  <p class="sub" id="sub"></p>
+
+  <section class="summary">
+    <div class="figs" id="figs"></div>
+    <div class="bar"><i id="barfill"></i></div>
+  </section>
+
+  <div class="controls" id="controls"></div>
+  <div id="list"></div>
+
+  <footer>
+    Grouped the way the studio is: <b>Category → Sign Type → Variant</b>. Green variants are built and
+    open in the studio (<b>Open Design Studio</b> opens it with the default sign). Depths are the studio standard, in inches. <b>Pricing stand-in</b> marks a
+    sign type costed with Halo-Lit pricing as a placeholder — a pricing to-do, never a construction hint.
+    Everything comes from <code>registry.mjs</code>.
+  </footer>
+</div>
+
+<script type="module">
+import { SIGNS, BUILDS } from './registry.mjs';
+
+const CATS = ['Illuminated','Non-Illuminated','Building/Wall Signs','Freestanding Signs','Specialty Signs'];
+const live = SIGNS.filter(s => s.status !== 'excluded');
+const state = { mode:'cat', filter:'all', q:'' };
+const el = (t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n;};
+
+/* group variants under their sign type, inside a category (or build family) */
+function groups(){
+  const keyOf = s => state.mode==='cat' ? s.category : s.build;
+  const m = new Map();
+  for(const s of live){
+    const k = keyOf(s);
+    if(!m.has(k)) m.set(k, new Map());
+    const t = m.get(k);
+    if(!t.has(s.signType)) t.set(s.signType, []);
+    t.get(s.signType).push(s);
+  }
+  const order = state.mode==='cat'
+    ? CATS.filter(c=>m.has(c))
+    : ['channel-letter','flat','cabinet','tube','media'].filter(b=>m.has(b));
+  return order.map(k=>[k, m.get(k)]);
+}
+
+/* ---- summary ---- */
+const done = live.filter(s=>s.status==='done').length;
+const types = new Set(live.map(s=>s.signType));
+const typesDone = [...types].filter(t=>live.filter(s=>s.signType===t).every(s=>s.status==='done'));
+document.getElementById('sub').textContent =
+  `Every sign type the studio sells, grouped the way customers see it. ${types.size} sign types, `
+  + `${live.length} variants, built on ${new Set(live.map(s=>s.build)).size} shared constructions.`;
+[[`${done}/${live.length}`,'Variants built','ok'],
+ [`${typesDone.length}/${types.size}`,'Sign types complete',''],
+ [new Set(live.map(s=>s.build)).size,'Constructions',''],
+ [SIGNS.filter(s=>s.stand_in).length,'Pricing stand-ins','']]
+ .forEach(([n,l,c])=>{const d=el('div','fig'+(c?' '+c:''));
+   d.append(el('span','n',String(n)),el('span','l',l));document.getElementById('figs').append(d);});
+document.getElementById('barfill').style.width = (done/live.length*100)+'%';
+
+/* ---- controls ---- */
+const controls = document.getElementById('controls');
+const modes = el('div','modes');
+const mk=(label,key,val)=>{const b=el('button','chip',label);b.type='button';
+  b.dataset.key=key;b.dataset.val=val;b.onclick=()=>{if(key==='mode')state.filter='all';state[key]=val;build();};return b;};
+modes.append(mk('By category','mode','cat'), mk('By construction','mode','build'));
+const filters = el('div','controls');
+const search=document.createElement('input');
+search.type='search'; search.id='q'; search.placeholder='Search sign type or variant…';
+search.oninput=()=>{state.q=search.value.toLowerCase();build();};
+
+function controlsRow(){
+  controls.textContent='';
+  controls.append(modes);
+  const all = mk('All','filter','all'); controls.append(all);
+  const keys = state.mode==='cat'
+    ? CATS.filter(c=>live.some(s=>s.category===c))
+    : ['channel-letter','flat','cabinet','tube','media'].filter(b=>live.some(s=>s.build===b));
+  keys.forEach(k=>controls.append(mk(state.mode==='cat'?k:BUILDS[k].label,'filter',k)));
+  controls.append(el('span','spacer'), search);
+  controls.querySelectorAll('.chip').forEach(b=>
+    b.setAttribute('aria-pressed', String(state[b.dataset.key]===b.dataset.val)));
+}
+
+/* ---- tiles ---- */
+const list = document.getElementById('list');
+const hit = s => !state.q ||
+  (s.signType+' '+(s.variant||'')+' '+(s.pricing||'')).toLowerCase().includes(state.q);
+
+function tile(signType, vars){
+  const d = vars.filter(s=>s.status==='done').length;
+  const t = el('div','tile'+(d===vars.length?' allDone':''));
+
+  const h = el('div','thead');
+  h.append(el('b',null,signType), el('span','ratio',`${d}/${vars.length}`));
+  t.append(h);
+
+  const bar = el('div','tbar'); const fill=el('i');
+  fill.style.width=(d/vars.length*100)+'%'; bar.append(fill); t.append(bar);
+
+  const f = el('div','facts');
+  const builds=[...new Set(vars.map(s=>s.build))];
+  builds.forEach(b=>f.append(el('span','fact build',BUILDS[b].label)));
+  const dep = vars.map(s=>s.depth).filter(Boolean);
+  if(dep.length){
+    const std=[...new Set(dep.map(x=>x.std))].sort((a,b)=>a-b);
+    f.append(el('span','fact',`${std.join('/')}″ std`));
+  }
+  const mc = Math.max(...vars.map(s=>(s.mounting||[]).length));
+  if(mc) f.append(el('span','fact',`${mc} mounting`));
+  const rc = vars.find(s=>s.returnColors);
+  if(rc) f.append(el('span','fact',`${rc.returnColors.length} return colors`));
+  if(vars.some(s=>s.ul)) f.append(el('span','fact','UL'));
+  if(vars.some(s=>s.stand_in)) f.append(el('span','fact si','pricing stand-in'));
+  t.append(f);
+
+  const vs = el('div','vars');
+  vars.forEach(s=>{
+    const label = s.variant || 'Standard';
+    if(s.status==='done'){
+      const a=el('a','v',label+' ✓');
+      a.href=`studio.html?type=${encodeURIComponent(s.id)}`;
+      a.title='Open in the studio';
+      vs.append(a);
+    } else {
+      vs.append(el('span','v none',label));
+    }
+  });
+  t.append(vs);
+  return t;
+}
+
+function build(){
+  controlsRow();
+  list.textContent='';
+  let shown=0;
+  for(const [key, byType] of groups()){
+    if(state.filter!=='all' && key!==state.filter) continue;
+    const sec = el('section','cat');
+    const grid = el('div','grid');
+    let n=0, tot=0, dn=0;
+    for(const [signType, vars] of byType){
+      const keep = vars.filter(hit);
+      if(!keep.length) continue;
+      grid.append(tile(signType, keep)); n++;
+      tot += keep.length; dn += keep.filter(s=>s.status==='done').length;
+    }
+    if(!n) continue;
+    shown += n;
+    const h = el('h2');
+    h.append(el('span',null, state.mode==='cat' ? key : BUILDS[key].label));
+    h.append(el('span','c',`${dn}/${tot} variants`));
+    sec.append(h, grid);
+    list.append(sec);
+  }
+  if(!shown) list.append(el('p','empty','No sign types match that filter.'));
+}
+build();
+</script>
+</body>
+</html>

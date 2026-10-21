@@ -18,7 +18,7 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const logs = []; page.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); }); page.on('pageerror', e => logs.push('pageerror: ' + e.message));
 const results = []; const stage = page.locator('#stage');
 const snap = async name => { await page.waitForTimeout(1000); await page.screenshot({ path: path.join(out, name + '.png'), clip: await stage.boundingBox() }); };
-let t = Date.now(); await page.goto(url);
+let t = Date.now(); await page.goto(url + 'studio.html');
 await page.waitForFunction(() => /Halo-lit/.test(document.getElementById('status').textContent));
 results.push({ step: 'sample first build', ms: Date.now() - t }); await snap('01-sample');
 const gpu = await page.evaluate(() => { const c = document.createElement('canvas').getContext('webgl2'); const d = c && c.getExtension('WEBGL_debug_renderer_info'); return d ? c.getParameter(d.UNMASKED_RENDERER_WEBGL) : 'unknown'; });
@@ -74,14 +74,15 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   await click('#unlit'); await snap('14-face-lit-unlit'); await click('#lit');
   const accent = fileURLToPath(new URL('fixtures/logo-dark-accent.png', import.meta.url)); results.push({ step: 'face-lit upload logo-dark-accent.png', ms: await uploadAndWait(accent) }); await click('[data-view=front]'); await snap('15-face-lit-dark-accent');
   await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
-// Build board (app/dashboard.html): every built variant links into the studio. Click through to halo-lit and face-lit Premium.
+// Build board = landing page (app/index.html): every built variant links into the studio, and "Open Design Studio" opens it
+// with the default sign. Click through to the studio, halo-lit and face-lit Premium.
 // Screenshot in test-output/dashboard/ (not compared: it loads Google Fonts over the network).
-{ fs.mkdirSync(path.join(out, 'dashboard'), { recursive: true }); await page.goto(url + 'dashboard.html'); await page.waitForSelector('a.v');
+{ fs.mkdirSync(path.join(out, 'dashboard'), { recursive: true }); await page.goto(url); await page.waitForSelector('a.v');
   const links = await page.$$eval('a.v', as => as.map(a => a.getAttribute('href'))), untitled = await page.$$eval('.thead b', bs => bs.filter(b => !b.textContent.trim()).length); await page.screenshot({ path: path.join(out, 'dashboard', 'board.png'), fullPage: true });
-  const open = async (needle, sign) => { await page.goto(url + 'dashboard.html'); await page.waitForSelector('a.v'); await page.click(`a.v[href*="${needle}"] >> nth=0`);
+  const open = async (needle, sign) => { await page.goto(url); await page.waitForSelector('a.v'); await page.click(needle ? `a.v[href*="${needle}"] >> nth=0` : 'a.cta');
     await page.waitForFunction(s => new RegExp('^' + s).test(document.getElementById('status').textContent), sign); return page.evaluate(() => ({ url: location.search, sign: document.getElementById('signtype').value, trim: document.getElementById('trim').value })); };
-  const halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit');
-  results.push({ step: 'dashboard click-through', ok: untitled === 0 && links.length === 6 && links.every(h => /^index\.html\?type=/.test(h)) && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, untitled, halo, premium }); }
+  const studio = await open(null, 'Halo-lit'), halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit');
+  results.push({ step: 'landing board click-through', ok: untitled === 0 && links.length === 6 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, untitled, studio, halo, premium }); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
