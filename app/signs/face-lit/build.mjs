@@ -78,7 +78,7 @@ export const componentInfo={
  drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.']
 };
 // Sign-type interface read by app.js (same shape as signs/halo-lit). Its light plane is the face glow, in front of the letters.
-export const sign={id:'face-lit',label:'Face-lit',standardDepth:5,build:buildFaceLit,glow:buildFaceGlow,
+export const sign={id:'face-lit',label:'Face-lit',standardDepth:5,defaultIntensity:40,build:buildFaceLit,glow:buildFaceGlow,
  // Flush: the wall touches the sealed back.
  wallDepth:s=>(s.depth+BACK)*(4/s.width),wallGap:()=>0,
  explodedOffsets,componentInfo,

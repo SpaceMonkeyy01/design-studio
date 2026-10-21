@@ -56,7 +56,7 @@ Light leaves **forward through the acrylic face only**. Zero light exits backwar
 | Depth | 5″ | 3–8″ (the UI accepts 0.5–8″, shared with halo-lit) |
 | Wall gap | 0″, flush | none (the gap control is hidden) |
 | LEDs | 6500K white | every LED colour, as halo-lit |
-| Intensity | 75% (shared slider) **ASSUMED** | 0–100% |
+| Intensity | 40% (shop's choice, 2026-10-21; halo-lit stays 75%) | 0–100% |
 | Face acrylic | 3/16″ **ASSUMED**, vinyl | vinyl / tinted |
 | Trim | match-artwork plastic | match-artwork / black / white plastic, silver / gold / bronze brushed metal, trimless |
 | Return colour | match artwork | match artwork / white / black |

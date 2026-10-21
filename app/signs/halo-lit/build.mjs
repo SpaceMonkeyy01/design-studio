@@ -48,7 +48,7 @@ export const componentInfo={
  drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.']
 };
 // Sign-type interface read by app.js. Every sign type exports one of these.
-export const sign={id:'halo-lit',label:'Halo-lit',standardDepth:1,build:buildHaloLit,glow:buildHalo,
+export const sign={id:'halo-lit',label:'Halo-lit',standardDepth:1,defaultIntensity:75,build:buildHaloLit,glow:buildHalo,
  // Wall sits behind the acrylic back, across the wall gap.
  wallDepth:s=>{const inch=4/s.width;return s.depth*inch+.1875*inch;},wallGap:s=>s.gap*(4/s.width),
  explodedOffsets,componentInfo,
