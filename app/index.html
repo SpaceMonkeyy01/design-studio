@@ -42,12 +42,6 @@ h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:b
   box-shadow:0 0 0 3px var(--accent-soft);margin-right:3px;vertical-align:baseline}
 .sub{color:var(--muted);font-size:.84rem;margin:6px 0 20px;max-width:62ch}
 
-/* landing header: title + the way into the studio */
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
-.cta{font-size:.86rem;font-weight:600;padding:9px 16px;border-radius:8px;text-decoration:none;
-  background:var(--accent);color:var(--on-accent);white-space:nowrap}
-.cta:hover{filter:brightness(1.08)}
-
 /* summary */
 .summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:16px 18px;margin-bottom:20px}
@@ -69,7 +63,7 @@ h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:b
 .spacer{flex:1 1 20px}
 input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:8px;
   border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:0;flex:0 1 230px}
-.chip:focus-visible,input:focus-visible,a:focus-visible,.cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .modes{display:flex;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
 .modes .chip{border:0;border-radius:0;padding:6px 14px}
 
@@ -97,6 +91,7 @@ input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:
 .fact{border:1px solid var(--line);border-radius:4px;padding:1px 5px;white-space:nowrap}
 .fact.build{font-family:var(--sans);border-color:var(--accent);color:var(--accent)}
 .fact.si{border-style:dashed}
+.fact.ok{border-color:var(--done);color:var(--done)}
 .vars{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
 .v{font-size:.73rem;padding:3px 8px;border-radius:5px;border:1px solid var(--line);
   color:var(--muted);text-decoration:none;display:inline-block;max-width:100%;overflow-wrap:anywhere}
@@ -110,10 +105,7 @@ footer code{font-family:var(--mono);font-size:.95em}
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
-    <h1><span class="mark"></span> Design Studio build board</h1>
-    <a class="cta" href="studio.html">Open Design Studio →</a>
-  </div>
+  <h1><span class="mark"></span> Design Studio build board</h1>
   <p class="sub" id="sub"></p>
 
   <section class="summary">
@@ -126,14 +118,15 @@ footer code{font-family:var(--mono);font-size:.95em}
 
   <footer>
     Grouped the way the studio is: <b>Category → Sign Type → Variant</b>. Green variants are built and
-    open in the studio (<b>Open Design Studio</b> opens it with the default sign). Depths are the studio standard, in inches. <b>Pricing stand-in</b> marks a
+    link into the studio. Depths are the studio standard, in inches. <b>Pricing stand-in</b> marks a
     sign type costed with Halo-Lit pricing as a placeholder — a pricing to-do, never a construction hint.
-    Everything comes from <code>registry.mjs</code>.
+    Green part specs were measured off an Estimator cross-section; dashed ones are inherited or
+    unread. Everything comes from <code>registry.mjs</code>.
   </footer>
 </div>
 
 <script type="module">
-import { SIGNS, BUILDS } from './registry.mjs';
+import { SIGNS, BUILDS, PARTS, partsFor, mountingsFor } from './registry.mjs';
 
 const CATS = ['Illuminated','Non-Illuminated','Building/Wall Signs','Freestanding Signs','Specialty Signs'];
 const live = SIGNS.filter(s => s.status !== 'excluded');
@@ -166,6 +159,7 @@ document.getElementById('sub').textContent =
   + `${live.length} variants, built on ${new Set(live.map(s=>s.build)).size} shared constructions.`;
 [[`${done}/${live.length}`,'Variants built','ok'],
  [`${typesDone.length}/${types.size}`,'Sign types complete',''],
+ [live.filter(s=>PARTS[s.parts]?.verified).length,'Measured from drawings',''],
  [new Set(live.map(s=>s.build)).size,'Constructions',''],
  [SIGNS.filter(s=>s.stand_in).length,'Pricing stand-ins','']]
  .forEach(([n,l,c])=>{const d=el('div','fig'+(c?' '+c:''));
@@ -206,7 +200,7 @@ function tile(signType, vars){
   const t = el('div','tile'+(d===vars.length?' allDone':''));
 
   const h = el('div','thead');
-  h.append(el('b',null,signType), el('span','ratio',`${d}/${vars.length}`));
+  h.append(el('b',signType), el('span','ratio',`${d}/${vars.length}`));
   t.append(h);
 
   const bar = el('div','tbar'); const fill=el('i');
@@ -220,8 +214,15 @@ function tile(signType, vars){
     const std=[...new Set(dep.map(x=>x.std))].sort((a,b)=>a-b);
     f.append(el('span','fact',`${std.join('/')}″ std`));
   }
-  const mc = Math.max(...vars.map(s=>(s.mounting||[]).length));
-  if(mc) f.append(el('span','fact',`${mc} mounting`));
+  const ms = mountingsFor(vars[0]);
+  if(ms && ms.length) f.append(el('span','fact',`${ms.length} mounting`));
+  const pt = vars.map(partsFor).find(Boolean);
+  if(pt && pt.face){
+    const th = pt.face.thickness ? pt.face.thickness+' ' : '';
+    f.append(el('span','fact'+(pt.verified?' ok':' si'), `${th}${pt.face.material} face`));
+  } else if(!pt){
+    f.append(el('span','fact si','no cross-section'));
+  }
   const rc = vars.find(s=>s.returnColors);
   if(rc) f.append(el('span','fact',`${rc.returnColors.length} return colors`));
   if(vars.some(s=>s.ul)) f.append(el('span','fact','UL'));
@@ -233,7 +234,7 @@ function tile(signType, vars){
     const label = s.variant || 'Standard';
     if(s.status==='done'){
       const a=el('a','v',label+' ✓');
-      a.href=`studio.html?type=${encodeURIComponent(s.id)}`;
+      a.href=`index.html?type=${encodeURIComponent(s.id)}`;
       a.title='Open in the studio';
       vs.append(a);
     } else {
