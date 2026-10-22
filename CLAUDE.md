@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–18 fabricated).
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated).
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 

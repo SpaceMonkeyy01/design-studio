@@ -72,7 +72,7 @@ for (const id of Object.keys(VARIANTS)) if (rows.get(id)?.build !== 'channel-let
 const waiting = Object.keys(VARIANTS).filter(id => rows.get(id).status !== 'done');
 for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
   for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t);
-  for (const f of v.options?.finish || []) if (!['artwork', 'silver-brushed', 'silver-mirror', 'gold-brushed', 'gold-mirror', 'bronze-brushed', 'bronze-mirror', 'black', 'white', 'custom'].includes(f)) fail(id + ': unknown finish ' + f); }
+  for (const f of v.options?.finish || []) if (!['artwork', 'silver-brushed', 'silver-mirror', 'gold-brushed', 'gold-mirror', 'bronze-brushed', 'bronze-mirror', 'bronze-antique', 'black', 'white', 'custom'].includes(f)) fail(id + ': unknown finish ' + f); }
 // Every mounting a config offers must be in the registry's channel-letter set and built (flush only, until raceway / backers get dimensions).
 const {mounting, mountingsFor} = await import('../../../app/core/mounting.mjs');
 for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting('channel-letter', m)?.built)) fail(id + ' offers an unbuilt mounting');
