@@ -71,6 +71,8 @@ input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:
 .fact{border:1px solid var(--line);border-radius:4px;padding:1px 5px}
 .fact.ok{border-color:var(--done);color:var(--done)}
 .fact.si{border-style:dashed}
+.fact.ask{border-color:var(--accent);color:var(--accent)}
+.ask{font-size:.78rem;color:var(--accent);margin:8px 0 0;max-width:72ch}
 .spec{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;font-size:.78rem;margin:10px 0 0;max-width:720px}
 .spec dt{color:var(--muted)}
 .spec dd{margin:0;overflow-wrap:anywhere}
@@ -127,7 +129,7 @@ footer code{font-family:var(--mono);font-size:.95em}
 </dialog>
 
 <script type="module">
-import { LIBRARY } from './references/library.mjs?v=2';
+import { LIBRARY } from './references/library.mjs?v=3';
 import { SIGNS, BUILDS, MOUNTING_SETS, PARTS, partsFor } from './registry.mjs?v=2';
 
 const ORDER = ['channel-letter','flat','cabinet','tube'];
@@ -190,7 +192,9 @@ function entry(e){
   else f.append(el('span','fact si','not read into the registry yet'));
   if(e.ink==='white') f.append(el('span','fact','white-line drawing'));
   if(!e.ink && MOUNTING_SETS[e.build]?.length) f.append(el('span','fact',`${new Set(e.drawings.map(d=>d.mounting)).size}/${MOUNTING_SETS[e.build].length} mountings drawn`));
+  if(e.ask) f.append(el('span','fact ask','ASK'));
   if(f.childNodes.length) a.append(f);
+  if(e.ask) a.append(el('p','ask',e.ask));
   if(p){ const dl=el('dl','spec'); for(const [k,v] of specRows(p)) dl.append(el('dt',null,k), el('dd',null,v)); a.append(dl); }
   const sold = soldAs(e);
   if(sold.length){ const s=el('div','sold'); s.append(el('span',null,'Sold as'));
@@ -209,7 +213,7 @@ function entry(e){
   a.append(g);
   return a;
 }
-const hit = e => !state.q || (e.title+' '+e.source+' '+e.drawings.map(d=>caption(e,d)).join(' ')).toLowerCase().includes(state.q);
+const hit = e => !state.q || (e.title+' '+e.source+' '+(e.ask?'ask ':'')+e.drawings.map(d=>caption(e,d)).join(' ')).toLowerCase().includes(state.q);
 
 const list = document.getElementById('list');
 function render(){

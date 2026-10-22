@@ -2,6 +2,7 @@
 // Imported from "Estimator Side Views.zip" (109 drawings, 2026-10-22). Drawings are provided data: replace a file, never redraw it.
 // id        library anchor (reference.html#<id>)
 // build     construction (BUILDS in registry.mjs)
+// ask       open question about the drawing, shown as a flag on the page
 // ink       'white' = white line art drawn for a dark background (the 8 found in "add -replace cross sections")
 // parts     key into PARTS in registry.mjs, when the cross-section has been read into it
 // drawings  mounting: MOUNTING_SETS id of that build (null = one section for the whole sign); thickness: flat-cut letters;
@@ -14,7 +15,7 @@ export const LIBRARY = [
   {"mounting":"backer-aluminum-25","thickness":null,"label":null,"file":"channel-letter/halo-lit/backer-aluminum-25.png","source":"Halo Lit Channel Letters/Flat Aluminum Backer (2.5 mm)/halo lit with aluminum backer (.5mm).png"},
   {"mounting":"flush","thickness":null,"label":null,"file":"channel-letter/halo-lit/flush.png","source":"Halo Lit Channel Letters/Flush Mount/image (56).png"},
   {"mounting":"raceway-2","thickness":null,"label":null,"file":"channel-letter/halo-lit/raceway-2.png","source":"Halo Lit Channel Letters/Raceway Mount (2_)/Halo lit with raceway- Exposed back acrylic.png"}]},
- {"id":"metal-backlit-backboard","title":"Metal backlit letters with backboard","build":"channel-letter","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+ {"id":"metal-backlit-backboard","title":"Metal backlit letters with backboard","build":"channel-letter","ink":"white","ask":"Mounting unknown: the drawing says \"Aluminum Backer\" with 1.5″ spacers. Flat aluminum backer 2.5mm or backboard cabinet 2″?","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
   {"mounting":null,"thickness":null,"label":null,"file":"channel-letter/metal-backlit-backboard/section.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Metal Backlit with Backboard - White.png"}]},
  {"id":"face-lit","title":"Face-lit channel letters, with trim","build":"channel-letter","parts":"face-lit","source":"Face Lit Channel Letters/WITH TRIM","drawings":[
   {"mounting":"backboard-cabinet-2","thickness":null,"label":null,"file":"channel-letter/face-lit/backboard-cabinet-2.png","source":"Face Lit Channel Letters/WITH TRIM/Backboard Cabinet (2_)/face lit with aluminum cabinet 2 inch.png"},
