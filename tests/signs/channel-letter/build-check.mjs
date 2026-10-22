@@ -73,7 +73,8 @@ if (!mounting('channel-letter', 'raceway-2').psuInside || mounting('channel-lett
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
 if (!halo.parts.acrylic?.children.length || halo.parts.clamps.children.length < 3 * meaningful || halo.parts.trim) fail('halo-lit config did not build an acrylic back with clamps');
-for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'opaque', returns: 'translucent', back: 'opaque', emit: ['side']}]) {
+for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'acrylic', faceVinyl: true, returns: 'translucent', back: 'opaque', emit: ['side']},
+  {face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']}, {face: 'opaque', returns: 'opaque', back: 'none', emit: []}]) {
   let refused = false; try { buildChannelLetter(art, settings, true, renderer, cfg); } catch (e) { refused = /not built yet/.test(e.message); }
   if (!refused) fail('unbuilt construction was not refused: ' + JSON.stringify(cfg)); }
 console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));

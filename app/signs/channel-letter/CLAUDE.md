@@ -8,12 +8,18 @@ Marked **ASSUMED** = a guess, check it. Marked **ASK** = a real dimension we do 
 
 ## Construction switches
 
-| Switch  | Values                                           |
-|---------|--------------------------------------------------|
-| face    | `opaque` \| `acrylic` \| `none` \| `half-mirror` |
-| returns | `opaque` \| `translucent`                        |
-| back    | `opaque` \| `acrylic` \| `mirror`                |
-| emit    | subset of `front`, `back`, `side`                |
+| Switch    | Values                                                   |
+|-----------|----------------------------------------------------------|
+| face      | `opaque` \| `acrylic` \| `none` \| `half-mirror`         |
+| faceVinyl | `true` = opaque vinyl over the acrylic face              |
+| returns   | `opaque` \| `translucent`                                |
+| back      | `opaque` \| `acrylic` \| `mirror` \| `none`              |
+| emit      | subset of `front`, `back`, `side`                        |
+
+The switches say how light leaves the can. What each part is made of (and how thick) is `PARTS` in `registry.mjs`, measured off the Estimator cross-sections; an entry with `verified:false` is inherited, not measured.
+
+- **Side-lit** is `{face: acrylic, faceVinyl: true, returns: translucent, back: opaque, emit: [side]}`: the same 3/16″ acrylic face as face-lit made opaque with vinyl, plus 3/16″ acrylic returns. Never model it as an opaque face part.
+- **Fabricated non-lit** is `back: none`: open-back can, no LEDs, wiring or drain.
 
 Built today:
 
@@ -117,5 +123,5 @@ Forbidden looks (from Gemini QC; most became impossible in a deterministic build
 ## Open
 
 - Raceway (2″, 0.1019″ aluminium), the three flat backers (ACM 4mm, acrylic 8mm, aluminium 2.5mm) and Backboard Cabinet (2″): height, overhang and fixings in inches (**ASK**).
-- Face-lit 3″ standard depth (separate step). Return colours: the registry has 9, the UI 3.
+- Face-lit data step (own PR, before/after screenshots): 3″ standard depth (2.5–10″), returns 0.0630″ and back 0.1019″ from `PARTS`, inspector part names and gauges read from `partsFor()`. Return colours: the registry has 9, the UI 3.
 - Polished metallic trim? Black Logic still wanted? Indoor / outdoor (weep holes) later.
