@@ -65,10 +65,14 @@ if (Math.abs(backDepth - .1019 * inch) > 1e-9) fail('sealed back should be the m
 if (Math.abs(sign.wallDepth(settings) - (settings.depth + .1019) * inch) > 1e-9) fail('wall must touch the 0.1019″ back');
 for (const depth of [sign.depthRange.min, sign.depthRange.max]) sign.build(art, {...settings, depth}, true, renderer).root.traverse(o => { if (o.geometry && !o.geometry.attributes.position.array.every(Number.isFinite)) fail('invalid geometry at ' + depth + '″'); });
 // ?type= table: exactly the registry's built channel-letter rows, each opening a real sign with real select options.
-const built = REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 'done').map(r => r.id).sort().join();
-if (Object.keys(VARIANTS).sort().join() !== built) fail('VARIANTS must list exactly the registry rows with build channel-letter and status done');
+// Every built row opens a variant; a variant may run ahead of the registry (its row still "todo" until the source is regenerated).
+const rows = new Map(REGISTRY.map(r => [r.id, r]));
+for (const r of REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 'done')) if (!VARIANTS[r.id]) fail('built registry row without a variant: ' + r.id);
+for (const id of Object.keys(VARIANTS)) if (rows.get(id)?.build !== 'channel-letter') fail('VARIANTS lists ' + id + ', not a channel-letter registry row');
+const waiting = Object.keys(VARIANTS).filter(id => rows.get(id).status !== 'done');
 for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
-  for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t); }
+  for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t);
+  for (const f of v.options?.finish || []) if (!['artwork', 'silver-brushed', 'silver-mirror', 'gold-brushed', 'gold-mirror', 'bronze-brushed', 'bronze-mirror', 'black', 'white', 'custom'].includes(f)) fail(id + ': unknown finish ' + f); }
 // Every mounting a config offers must be in the registry's channel-letter set and built (flush only, until raceway / backers get dimensions).
 const {mounting, mountingsFor} = await import('../../../app/core/mounting.mjs');
 for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting('channel-letter', m)?.built)) fail(id + ' offers an unbuilt mounting');
@@ -82,7 +86,22 @@ for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) f
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
 if (!halo.parts.acrylic?.children.length || halo.parts.clamps.children.length < 3 * meaningful || halo.parts.trim) fail('halo-lit config did not build an acrylic back with clamps');
 for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'acrylic', faceVinyl: true, returns: 'translucent', back: 'opaque', emit: ['side']},
-  {face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']}, {face: 'opaque', returns: 'opaque', back: 'none', emit: []}]) {
+  {face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']}, {face: 'opaque', returns: 'opaque', back: 'opaque', emit: []}]) {
   let refused = false; try { buildChannelLetter(art, settings, true, renderer, cfg); } catch (e) { refused = /not built yet/.test(e.message); }
   if (!refused) fail('unbuilt construction was not refused: ' + JSON.stringify(cfg)); }
+// Fabricated non-lit: metal face + returns on the wall, open back, studs welded to the face. Nothing glows, lit or not.
+const fab = signs['fabricated-nonlit'], fabSettings = {...settings, signtype: 'fabricated-nonlit', depth: fab.standardDepth, finish: 'gold-brushed'};
+if (fab.lit !== false || fab.glow) fail('fabricated must be non-lit with no light plane');
+if (fab.standardDepth !== 1 || fab.depthRange.min !== .75 || fab.depthRange.max !== 10) fail('fabricated depth should be the registry 1″ (0.75–10″)');
+for (const isLit of [true, false]) { const f = fab.build(art, fabSettings, isLit, renderer); f.root.updateMatrixWorld(true);
+  if (Object.keys(f.parts).sort().join() !== 'face,returns,studs') fail('fabricated parts: ' + Object.keys(f.parts).sort().join());
+  f.root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('fabricated sign glows'); if (!o.matrixWorld.elements.every(Number.isFinite)) fail('fabricated: invalid transform'); });
+  if (f.parts.face.children.length !== pieces) fail('fabricated face pieces ' + f.parts.face.children.length);
+  if (f.parts.studs.children.length < 3 * meaningful) fail('fabricated: expected ≥3 studs per piece'); }
+const fabInch = 4 / fabSettings.width, fabBuilt = fab.build(art, fabSettings, false, renderer), fabBox = new THREE.Box3().setFromObject(fabBuilt.parts.face);
+if (Math.abs(fabBox.max.z - .1019 * fabInch) > .02 * fabInch) fail('fabricated face should be the measured 0.1019″, front at ' + fabBox.max.z / fabInch + '″');
+if (Math.abs(fab.wallDepth(fabSettings) - fabSettings.depth * fabInch) > 1e-9 || fab.wallGap(fabSettings) !== 0) fail('fabricated returns must sit on the wall');
+const fabReturns = new THREE.Box3().setFromObject(fabBuilt.parts.returns);
+if (Math.abs(fabReturns.min.z + fab.wallDepth(fabSettings)) > 1e-6) fail('fabricated returns do not reach the wall');
+if (waiting.length) console.log('VARIANTS_WAITING_FOR_REGISTRY', waiting.length, 'rows still "todo":', waiting.join(', '));
 console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));

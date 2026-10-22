@@ -4,7 +4,7 @@ Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D s
 No backend, no API keys, no build step. Plain ES modules + vendored Three.js r186 + Clipper 6.4.2.
 
 Origin: Halo Studio, built in ChatGPT by a teammate and handed over on 2026-10-19 (`docs/handover/`). Everything after the original history was made by us.
-Implemented: **halo-lit** and **face-lit**, both from the one `channel-letter` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
+Implemented: **halo-lit**, **face-lit** and **fabricated (non-lit)**, all from the one `channel-letter` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
 
 ## Run
 
@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit).
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–18 fabricated).
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 
@@ -58,7 +58,7 @@ qc/                Airtable QC notes + report scripts
 docs/handover/     original ChatGPT handover (read-only history)
 ```
 
-**Sign interface.** Each `signs/<construction>/build.mjs` exports `signs`, one interface object per built config: `{id, label, standardDepth, depthRange {min,max} (both from the registry rows that open it), defaultIntensity (%), build(art,s,isLit,renderer) → {root, parts}, glow (light-plane builder or null; `userData.front` puts it in front of the sign instead of on the wall), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers them in `SIGNS` (ids = the Sign type control's values, also saved in projects) and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
+**Sign interface.** Each `signs/<construction>/build.mjs` exports `signs`, one interface object per built config: `{id, label, lit (false = non-illuminated: no Lit/Unlit, LED or intensity controls), standardDepth, depthRange {min,max} (both from the registry rows that open it), defaultIntensity (%), build(art,s,isLit,renderer) → {root, parts}, glow (light-plane builder or null; `userData.front` puts it in front of the sign instead of on the wall), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers them in `SIGNS` (ids = the Sign type control's values, also saved in projects) and never names a part or a sign type directly. Controls only some types use carry `data-sign="<id> <id>…"` in `studio.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
 
 ## Architecture
 
@@ -109,7 +109,7 @@ flowchart LR
 ## Backlog (ordered)
 
 1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-2. **Performance + cleanup.** Done: render on demand, shadow map only on scene changes (idle 0 draws, orbit ~4.5 ms/frame on HD 530). Open, both change pixels so need sign-off: the preview pixel ratio floor of 1.75 on 1× screens, and the 4096 shadow map size. See `docs/handover/OPTIMIZATION.md`.
+2. **Performance + cleanup.** Done: render on demand, shadow map only on scene changes (idle 0 draws, orbit ~4.5 ms/frame on HD 530). Kept by decision (2026-10-22): the 1.75 preview pixel ratio floor on 1× screens and the 4096 shadow map. See `docs/handover/OPTIMIZATION.md`.
 3. **Channel-letter mountings beyond flush** (raceway 2″, three flat backers, backboard cabinet), declared per construction in `MOUNTING_SETS`. Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
 5. Smaller: exploded view clutter at ¾ angle (worse with deep face-lit cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
