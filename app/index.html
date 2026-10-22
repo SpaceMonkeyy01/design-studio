@@ -47,6 +47,9 @@ h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:b
 .cta{font-size:.86rem;font-weight:600;padding:9px 16px;border-radius:8px;text-decoration:none;
   background:var(--accent);color:var(--on-accent);white-space:nowrap}
 .cta:hover{filter:brightness(1.08)}
+.toplinks{display:flex;gap:8px;flex-wrap:wrap}
+.ref{font-size:.86rem;font-weight:600;padding:9px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
 
 /* summary */
 .summary{background:var(--panel);border:1px solid var(--line);border-radius:10px;
@@ -69,7 +72,7 @@ h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:b
 .spacer{flex:1 1 20px}
 input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:8px;
   border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:0;flex:0 1 230px}
-.chip:focus-visible,input:focus-visible,a:focus-visible,.cta:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip:focus-visible,input:focus-visible,a:focus-visible,.cta:focus-visible,.ref:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .modes{display:flex;gap:0;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
 .modes .chip{border:0;border-radius:0;padding:6px 14px}
 
@@ -113,7 +116,7 @@ footer code{font-family:var(--mono);font-size:.95em}
 <div class="wrap">
   <div class="top">
     <h1><span class="mark"></span> Design Studio build board</h1>
-    <a class="cta" href="studio.html">Open Design Studio →</a>
+    <div class="toplinks"><a class="ref" href="reference.html">Reference library</a><a class="cta" href="studio.html">Open Design Studio →</a></div>
   </div>
   <p class="sub" id="sub"></p>
 

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Construction Reference Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Same tokens as the build board (index.html). Drawings are black line art on transparency, so they always sit on white. */
+:root{
+  --bg:#f4f5f3; --panel:#ffffff; --ink:#16181a; --muted:#6b7177; --line:#dfe2de;
+  --accent:#b4761a; --accent-soft:#f7ecd9; --on-accent:#ffffff;
+  --done:#2f7d55; --done-soft:#e3f0e8; --off:#d7dad6; --sheet:#ffffff; --pending:#1d2024;
+  --sans:'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#15171a; --panel:#1d2024; --ink:#e9ebe8; --muted:#969ca3; --line:#2e3338;
+  --accent:#e0a955; --accent-soft:#38301f; --on-accent:#15171a;
+  --done:#58b483; --done-soft:#1e3028; --off:#343a40; --pending:#0f1113;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#15171a; --panel:#1d2024; --ink:#e9ebe8; --muted:#969ca3; --line:#2e3338;
+  --accent:#e0a955; --accent-soft:#38301f; --on-accent:#15171a;
+  --done:#58b483; --done-soft:#1e3028; --off:#343a40; --pending:#0f1113;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1140px;margin:0 auto;padding-block:28px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+h1{font-size:1.45rem;font-weight:700;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.mark{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);margin-right:3px;vertical-align:baseline}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font-size:.86rem;font-weight:600;padding:9px 16px;border-radius:8px;text-decoration:none;white-space:nowrap;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.btn.cta{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:hover{filter:brightness(1.06)}
+.sub{color:var(--muted);font-size:.84rem;margin:6px 0 20px;max-width:68ch}
+
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;align-items:center;position:sticky;top:0;z-index:2;
+  background:var(--bg);padding:10px 0}
+.chip{font:inherit;font-size:.78rem;padding:6px 12px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.chip .c{font-family:var(--mono);opacity:.75;margin-left:4px}
+.spacer{flex:1 1 20px}
+input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel);color:var(--ink);min-width:0;flex:0 1 230px}
+.chip:focus-visible,input:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.cat{margin-top:22px}
+.cat>h2{margin:0 0 11px;font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+  display:flex;align-items:center;gap:10px}
+.cat>h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.cat>h2 .c{font-family:var(--mono);letter-spacing:0;text-transform:none}
+
+.entry{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 16px 14px;margin-bottom:12px;
+  scroll-margin-top:64px}
+.entry.target{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ehead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.ehead h3{margin:0;font-size:1rem;font-weight:600;flex:1;min-width:0}
+.ehead .n{font-family:var(--mono);font-size:.76rem;color:var(--muted)}
+.facts{display:flex;flex-wrap:wrap;gap:4px 6px;font-family:var(--mono);font-size:.69rem;color:var(--muted);margin-top:8px}
+.fact{border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.fact.ok{border-color:var(--done);color:var(--done)}
+.fact.si{border-style:dashed}
+.spec{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;font-size:.78rem;margin:10px 0 0;max-width:720px}
+.spec dt{color:var(--muted)}
+.spec dd{margin:0;overflow-wrap:anywhere}
+.sold{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;font-size:.73rem;align-items:center}
+.sold>span{color:var(--muted)}
+.v{padding:3px 8px;border-radius:5px;border:1px solid var(--line);color:var(--muted);text-decoration:none}
+a.v{background:var(--done-soft);border-color:var(--done);color:var(--done);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:12px}
+.sheet{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel);display:flex;flex-direction:column}
+.sheet button{all:unset;cursor:zoom-in;display:block;background:var(--sheet);aspect-ratio:1/1;padding:8px}
+.sheet img{width:100%;height:100%;object-fit:contain;display:block}
+.sheet figcaption{font-size:.74rem;padding:6px 9px 7px;border-top:1px solid var(--line);display:flex;gap:6px;justify-content:space-between}
+.sheet figcaption b{font-weight:600}
+.sheet figcaption span{color:var(--muted);font-family:var(--mono);font-size:.68rem}
+.pending .sheet button{background:var(--pending)}
+.note{font-size:.78rem;color:var(--muted);margin:8px 0 0;max-width:72ch}
+.empty{color:var(--muted);font-size:.85rem;padding:26px 0;text-align:center}
+
+dialog{border:1px solid var(--line);border-radius:12px;padding:0;background:var(--panel);color:var(--ink);
+  width:min(1000px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:#0b0d0fb0}
+.dhead{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.dhead b{flex:1;font-size:.9rem}
+.dhead a,.dhead button{font:inherit;font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:5px 10px;
+  background:var(--bg);color:var(--ink);text-decoration:none;cursor:pointer}
+.dimg{background:var(--sheet);display:flex;justify-content:center;padding:12px}
+.dimg.dark{background:var(--pending)}
+.dimg img{max-width:100%;max-height:calc(100vh - 150px);object-fit:contain}
+.dsrc{font-family:var(--mono);font-size:.68rem;color:var(--muted);padding:8px 12px;overflow-wrap:anywhere}
+footer{margin-top:30px;font-size:.74rem;color:var(--muted);max-width:72ch}
+footer code{font-family:var(--mono);font-size:.95em}
+@media (max-width:560px){.controls{position:static}.entry{scroll-margin-top:12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.spec{grid-template-columns:1fr}.spec dt{margin-top:4px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1><span class="mark"></span> Construction reference library</h1>
+    <div class="links"><a class="btn" href="index.html">← Build board</a><a class="btn cta" href="studio.html">Open Design Studio →</a></div>
+  </div>
+  <p class="sub" id="sub"></p>
+  <div class="controls" id="controls"></div>
+  <div id="list"></div>
+  <footer>
+    Drawings are the Estimator Side Views cross-sections, unedited, in <code>app/references/</code> (listed in
+    <code>references/library.mjs</code>). Part specs and mounting names come from <code>registry.mjs</code>: green specs were
+    measured off the drawing into <code>PARTS</code>; dashed ones are inherited or not read yet.
+  </footer>
+</div>
+<dialog id="viewer" aria-label="Drawing">
+  <div class="dhead"><b id="vtitle"></b><a id="vopen" target="_blank" rel="noopener">Open file ↗</a><button id="vclose" type="button">Close ×</button></div>
+  <div class="dimg" id="vbox"><img id="vimg" alt=""></div>
+  <div class="dsrc" id="vsrc"></div>
+</dialog>
+
+<script type="module">
+import { LIBRARY } from './references/library.mjs?v=1';
+import { SIGNS, BUILDS, MOUNTING_SETS, PARTS, partsFor } from './registry.mjs?v=2';
+
+const ORDER = ['channel-letter','flat','cabinet','tube'];
+const el = (t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n;};
+const state = { build:'all', q:'' };
+const total = LIBRARY.reduce((n,e)=>n+e.drawings.length,0);
+document.getElementById('sub').textContent =
+  `${total} cross-sections from the Estimator Side Views, ${LIBRARY.filter(e=>!e.pending).length} sign constructions, `
+  + `grouped by how the studio builds them. Click a drawing to enlarge it.`;
+
+/* mounting label from the construction's MOUNTING_SETS; flat-cut drawings add their thickness */
+const mountLabel = (e,d) => (MOUNTING_SETS[e.build]||[]).find(m=>m.id===d.mounting)?.label || (d.mounting ? d.mounting : 'Section');
+const mountRank = (e,d) => { const i=(MOUNTING_SETS[e.build]||[]).findIndex(m=>m.id===d.mounting); return i<0?99:i; };
+const inches = t => { const [n,d] = t.replace('″','').split('/'); return d ? n/d : +n; };
+const sorted = e => [...e.drawings].sort((a,b)=> a.thickness && b.thickness && a.thickness!==b.thickness
+  ? inches(a.thickness)-inches(b.thickness) : mountRank(e,a)-mountRank(e,b));
+const caption = (e,d) => e.pending ? d.label : (d.thickness ? d.thickness+' · ' : '') + mountLabel(e,d);
+
+/* the registry rows sold with this construction (rows whose parts entry is this one) */
+const soldAs = e => e.parts ? SIGNS.filter(s=>s.status!=='excluded' && s.parts===e.parts) : [];
+
+/* ---- controls ---- */
+const controls = document.getElementById('controls');
+const search = el('input'); search.type='search'; search.placeholder='Search sign or mounting…';
+search.oninput = ()=>{ state.q=search.value.toLowerCase(); render(); };
+function controlsRow(){
+  controls.textContent='';
+  const keys = [['all','All',LIBRARY.length], ...ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b).length]),
+    ['pending','To file',LIBRARY.filter(e=>e.pending).length]];
+  for(const [k,label,n] of keys){ const b=el('button','chip',label); b.type='button'; b.append(el('span','c',String(n)));
+    b.setAttribute('aria-pressed', String(state.build===k)); b.onclick=()=>{state.build=k;render();}; controls.append(b); }
+  controls.append(el('span','spacer'), search);
+}
+
+/* ---- viewer ---- */
+const viewer = document.getElementById('viewer');
+function show(e,d){
+  document.getElementById('vtitle').textContent = e.title + ' — ' + caption(e,d);
+  const img = document.getElementById('vimg'); img.src = 'references/'+d.file; img.alt = e.title+', '+caption(e,d)+' cross-section';
+  document.getElementById('vopen').href = 'references/'+d.file;
+  document.getElementById('vbox').classList.toggle('dark', !!e.pending);
+  document.getElementById('vsrc').textContent = 'Source: Estimator Side Views/' + d.source;
+  viewer.showModal();
+}
+document.getElementById('vclose').onclick = ()=>viewer.close();
+viewer.addEventListener('click', ev=>{ if(ev.target===viewer) viewer.close(); });
+
+/* ---- entries ---- */
+function specRows(p){
+  const part = x => x ? ((x.thickness?x.thickness+' ':'')+(x.material||'')).replace(/"/g,'″') : '—';
+  return [['Face',part(p.face)],['Returns',part(p.returns)],['Back',part(p.back)],['Trim',p.trim||'none'],
+    ['Light',p.emit?.length?p.emit.join(' + ')+(p.led?' · '+p.led:''):'not illuminated'],
+    ['Fixings',(p.fixings||[]).join(', ').replace(/"/g,'″')||'—'],['Wire · PSU',[p.wire,p.psu].filter(Boolean).join(' · ')||'—'],
+    ...(p.note?[['Note',p.note]]:[])];
+}
+function entry(e){
+  const a = el('article','entry'+(e.pending?' pending':'')); a.id = e.id;
+  const h = el('div','ehead'); h.append(el('h3',null,e.title), el('span','n',`${e.drawings.length} drawing${e.drawings.length>1?'s':''}`)); a.append(h);
+  const f = el('div','facts'), p = e.parts ? partsFor({parts:e.parts}) : null;
+  if(p) f.append(el('span','fact'+(p.verified?' ok':' si'), p.verified?'measured into PARTS':'PARTS inherited, drawing not read'));
+  else if(!e.pending) f.append(el('span','fact si','not read into the registry yet'));
+  if(e.build && MOUNTING_SETS[e.build]?.length) f.append(el('span','fact',`${new Set(e.drawings.map(d=>d.mounting)).size}/${MOUNTING_SETS[e.build].length} mountings drawn`));
+  if(f.childNodes.length) a.append(f);
+  if(p){ const dl=el('dl','spec'); for(const [k,v] of specRows(p)) dl.append(el('dt',null,k), el('dd',null,v)); a.append(dl); }
+  const sold = soldAs(e);
+  if(sold.length){ const s=el('div','sold'); s.append(el('span',null,'Sold as'));
+    for(const r of sold){ const label = `${r.signType} · ${r.variant||'Standard'}`;
+      if(r.status==='done'){ const l=el('a','v',label+' ✓'); l.href='studio.html?type='+encodeURIComponent(r.id); l.title='Open in the studio'; s.append(l); }
+      else s.append(el('span','v',label)); }
+    a.append(s); }
+  if(e.pending) a.append(el('p','note','White-line drawings found inside Face-lit / With trim / Flat ACM Backer / "add -replace cross sections". They show other products and are not filed under a sign yet.'));
+  const g = el('div','grid');
+  for(const d of sorted(e)){
+    const fig = el('figure','sheet'), b = el('button'); b.type='button'; b.title='Enlarge';
+    const img = el('img'); img.loading='lazy'; img.decoding='async'; img.src='references/'+d.file; img.alt=e.title+', '+caption(e,d)+' cross-section';
+    b.append(img); b.onclick=()=>show(e,d);
+    const cap = el('figcaption'); cap.append(el('b',null,caption(e,d)));
+    fig.append(b,cap); g.append(fig);
+  }
+  a.append(g);
+  return a;
+}
+const hit = e => !state.q || (e.title+' '+e.source+' '+e.drawings.map(d=>caption(e,d)).join(' ')).toLowerCase().includes(state.q);
+
+const list = document.getElementById('list');
+function render(){
+  controlsRow(); list.textContent='';
+  const groups = [...ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b)]), ['pending','To file',LIBRARY.filter(e=>e.pending)]];
+  let shown = 0;
+  for(const [k,label,entries] of groups){
+    if(state.build!=='all' && state.build!==k) continue;
+    const keep = entries.filter(hit); if(!keep.length) continue;
+    const sec = el('section','cat'), h = el('h2'); h.append(el('span',null,label), el('span','c',`${keep.length}`));
+    sec.append(h, ...keep.map(entry)); list.append(sec); shown += keep.length;
+  }
+  if(!shown) list.append(el('p','empty','No drawings match that filter.'));
+}
+render();
+
+/* reference.html#<id> (the studio links to its current sign): scroll to it and mark it */
+function focusHash(){ const id = decodeURIComponent(location.hash.slice(1)); if(!id) return;
+  const t = document.getElementById(id); if(!t){ state.build='all'; state.q=''; search.value=''; render(); }
+  const target = document.getElementById(id); if(!target) return;
+  document.querySelectorAll('.entry.target').forEach(n=>n.classList.remove('target'));
+  target.classList.add('target'); target.scrollIntoView({block:'start'}); }
+window.addEventListener('hashchange', focusHash); focusHash();
+</script>
+</body>
+</html>
