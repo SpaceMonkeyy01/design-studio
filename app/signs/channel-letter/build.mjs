@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {clippedReturnRings,offsetRegions} from '../../core/artwork.mjs?v=11';
 import {mountingPoints} from '../../core/routing.mjs?v=10';
-import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=11';
+import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=12';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
 import {glowPlane} from '../../core/glow.mjs?v=1';
 import {builtMounting} from '../../core/mounting.mjs?v=2';
 import {SIGNS as REGISTRY,PARTS} from '../../registry.mjs?v=2';
-import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=1';
+import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=2';
 // Channel letters: a traced can (face + returns + back). One parametric build for every channel-letter variant;
 // the variant is a construction config, not code. See CLAUDE.md in this folder.
 //   face      opaque | acrylic | none | half-mirror
@@ -142,8 +142,8 @@ export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=docume
 // Registry ids (app/registry.mjs) this construction builds → the sign to open and, per studio tier, the trims offered.
 // Face-lit Standard = plastic trim cap; Premium = metallic trim or trimless (pricing names: "Plastic Trim" / "Metallic Trim").
 const STANDARD_TRIMS=['artwork','black','white'],PREMIUM_TRIMS=['silver','gold','bronze','none'];
-// Fabricated non-lit: one finish per studio variant; "Painted (same as logo)" also offers the other paints. The registry's ninth
-// finish, Bronze Antique, has no material yet.
+// Fabricated non-lit: one finish per studio variant; "Painted (same as logo)" also offers the other paints. Antique bronze (the
+// registry's ninth finish) has no variant row of its own: it is in the Finish list for every metal sign.
 const PAINTS=['artwork','black','white','custom'];
 export const VARIANTS={
  'illuminated-dimensional-letters-halo-lit-back-lit':{sign:'halo-lit'},

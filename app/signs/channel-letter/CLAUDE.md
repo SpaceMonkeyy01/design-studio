@@ -120,17 +120,17 @@ From the Estimator cross-section (`references/channel-letter/fabricated-nonlit/f
 - **Studs**: 3–4 ¼″Ø threaded studs per letter, welded to the back of the face (boss + thread), through the empty can into the wall.
 - **Nothing else**: no LEDs, wiring, drain, clamps or light plane. `lit: false` hides Lit/Unlit and the LED/intensity controls (`data-sign="halo-lit face-lit"`), and shows the daylight (unlit) view; switching back to a lit sign turns lighting back on. The view sheet captures only the 6 unlit views.
 - **Defaults**: 1″ depth (0.75–10″, registry), 48″ wide, flush.
-- **Variants**: one finish each (Polished/Brushed Gold, Bronze, Silver → `*-mirror` / `*-brushed`); "Painted Finish (Same as logo)" offers artwork colours, black, white or custom paint (matte / satin / gloss sheen). The registry's ninth finish, **Bronze Antique**, has no material yet (**ASK** before inventing one).
+- **Variants**: one finish each (Polished/Brushed Gold, Bronze, Silver → `*-mirror` / `*-brushed`); "Painted Finish (Same as logo)" offers artwork colours, black, white or custom paint (matte / satin / gloss sheen). The registry's ninth finish, **Bronze Antique**, is `bronze-antique` in the Finish list (every metal sign; no variant row of its own): dark chocolate bronze with a seamless mottled patina and a wax coat, **invented** at the user's request (no shop sample): tune it on screenshot 19 if a sample arrives.
 
 ## Variants (registry ids)
 
-`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. The 7 Dimensional Fabricated Letters rows have variants too, but their registry status is still `todo`: their `?type=` links and build-board entries switch on when the source registry marks them `done` (the test lists them as waiting). `stand_in` in the registry is a pricing placeholder, never a construction hint.
+`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. The 7 Dimensional Fabricated Letters rows too: their `status` was set to `done` by hand on 2026-10-22 at the user's request, so the source generator must mark them done as well or the next regeneration reverts it (build-check would then list them as waiting). `stand_in` in the registry is a pricing placeholder, never a construction hint.
 
 ## Tests
 
 - `tests/signs/channel-letter/build-check.mjs` (in `npm test`): face-lit part list (no halo, acrylic back, clamps, raceway or backer), piece counts, ≥3 mounts and one weep hole per piece, LEDs present, only face and LED lenses glow, nothing lit behind the sealed back, face glow in front, unlit = no emissive, trimless removes only the trim; halo-lit config builds an acrylic back with clamps; fabricated: face/returns/studs only, nothing glows lit or unlit, 0.1019″ face, returns reach the wall, depth from the registry; unbuilt switch combinations are refused.
 - `tests/runtime-smoke.mjs`: 27 pieces and ≥81 clamps for halo-lit; switching halo-lit → face-lit → halo-lit in the app.
-- `tests/visual-smoke.mjs`: screenshots 01–09 halo-lit, 10–15 face-lit, 16–18 fabricated (polished gold, exploded, painted; Lit/Unlit and LED controls hidden). On plaster the white face measures 0.93 vs wall 0.76 luminance; the colour face 0.86 value vs 0.77, saturation > 0.45. Fixture `logo-dark-accent.png` shows dark accents staying unlit.
+- `tests/visual-smoke.mjs`: screenshots 01–09 halo-lit, 10–15 face-lit, 16–19 fabricated (polished gold, exploded, painted, antique bronze; Lit/Unlit and LED controls hidden). On plaster the white face measures 0.93 vs wall 0.76 luminance; the colour face 0.86 value vs 0.77, saturation > 0.45. Fixture `logo-dark-accent.png` shows dark accents staying unlit.
 
 ## Open
 

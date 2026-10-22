@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {createLetterRouter,layoutModules} from './routing.mjs?v=10';
-import {ledColour} from './materials.mjs?v=11';
+import {ledColour} from './materials.mjs?v=12';
 // Internal hardware shared by every sign type: part groups, LED modules with routed wiring, threaded studs, drain markers.
 // Sizes are illustrative and scaled per letter so hardware fits narrow strokes.
 // One group per named part under a root. addPart(name, obj) adds a shadow-casting mesh to that part.
