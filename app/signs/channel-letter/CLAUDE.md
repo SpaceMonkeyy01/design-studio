@@ -124,7 +124,7 @@ From the Estimator cross-section (`references/channel-letter/fabricated-nonlit/f
 
 ## Variants (registry ids)
 
-`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. The 7 Dimensional Fabricated Letters rows have variants too, but their registry status is still `todo`: their `?type=` links and build-board entries switch on when the source registry marks them `done` (the test lists them as waiting). `stand_in` in the registry is a pricing placeholder, never a construction hint.
+`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. The 7 Dimensional Fabricated Letters rows too: their `status` was set to `done` by hand on 2026-10-22 at the user's request, so the source generator must mark them done as well or the next regeneration reverts it (build-check would then list them as waiting). `stand_in` in the registry is a pricing placeholder, never a construction hint.
 
 ## Tests
 
