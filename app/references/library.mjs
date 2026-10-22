@@ -1,7 +1,8 @@
 // Construction reference library: the Estimator Side Views cross-sections, one entry per drawing set.
 // Imported from "Estimator Side Views.zip" (109 drawings, 2026-10-22). Drawings are provided data: replace a file, never redraw it.
 // id        library anchor (reference.html#<id>)
-// build     construction (BUILDS in registry.mjs); null = drawings not filed under a sign yet (pending)
+// build     construction (BUILDS in registry.mjs)
+// ink       'white' = white line art drawn for a dark background (the 8 found in "add -replace cross sections")
 // parts     key into PARTS in registry.mjs, when the cross-section has been read into it
 // drawings  mounting: MOUNTING_SETS id of that build (null = one section for the whole sign); thickness: flat-cut letters;
 //           file: under app/references/; source: path inside the original folder tree
@@ -13,6 +14,8 @@ export const LIBRARY = [
   {"mounting":"backer-aluminum-25","thickness":null,"label":null,"file":"channel-letter/halo-lit/backer-aluminum-25.png","source":"Halo Lit Channel Letters/Flat Aluminum Backer (2.5 mm)/halo lit with aluminum backer (.5mm).png"},
   {"mounting":"flush","thickness":null,"label":null,"file":"channel-letter/halo-lit/flush.png","source":"Halo Lit Channel Letters/Flush Mount/image (56).png"},
   {"mounting":"raceway-2","thickness":null,"label":null,"file":"channel-letter/halo-lit/raceway-2.png","source":"Halo Lit Channel Letters/Raceway Mount (2_)/Halo lit with raceway- Exposed back acrylic.png"}]},
+ {"id":"metal-backlit-backboard","title":"Metal backlit letters with backboard","build":"channel-letter","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":null,"thickness":null,"label":null,"file":"channel-letter/metal-backlit-backboard/section.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Metal Backlit with Backboard - White.png"}]},
  {"id":"face-lit","title":"Face-lit channel letters, with trim","build":"channel-letter","parts":"face-lit","source":"Face Lit Channel Letters/WITH TRIM","drawings":[
   {"mounting":"backboard-cabinet-2","thickness":null,"label":null,"file":"channel-letter/face-lit/backboard-cabinet-2.png","source":"Face Lit Channel Letters/WITH TRIM/Backboard Cabinet (2_)/face lit with aluminum cabinet 2 inch.png"},
   {"mounting":"backer-acm-4","thickness":null,"label":null,"file":"channel-letter/face-lit/backer-acm-4.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/face lit with flat ACM backer.png"},
@@ -27,6 +30,10 @@ export const LIBRARY = [
   {"mounting":"backer-aluminum-25","thickness":null,"label":null,"file":"channel-letter/face-lit-trimless/backer-aluminum-25.png","source":"Face Lit Channel Letters/TRIMLESS/Flat Aluminum Backer 2.5mm/trimless with flat aluminum backer.png"},
   {"mounting":"flush","thickness":null,"label":null,"file":"channel-letter/face-lit-trimless/flush.png","source":"Face Lit Channel Letters/TRIMLESS/Flush Mount/trimless face lit flush mount.png"},
   {"mounting":"raceway-2","thickness":null,"label":null,"file":"channel-letter/face-lit-trimless/raceway-2.png","source":"Face Lit Channel Letters/TRIMLESS/Raceway Mount (2 inch)/trimless face lit with raceway.png"}]},
+ {"id":"front-lit-elevation","title":"Front-lit letters: elevation + section A-A","build":"channel-letter","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":"flush","thickness":null,"label":null,"file":"channel-letter/front-lit-elevation/flush.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Front-lit Flush Mount - White.png"}]},
+ {"id":"front-lit-backboard","title":"Front-lit letters with 2D backboard","build":"channel-letter","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":"backer-acm-4","thickness":null,"label":null,"file":"channel-letter/front-lit-backboard/backer-acm-4.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Front-lit with 2D Backboard - White.png"}]},
  {"id":"side-lit","title":"Side-lit channel letters","build":"channel-letter","parts":"side-lit","source":"Side Lit Channel Letters","drawings":[
   {"mounting":"backboard-cabinet-2","thickness":null,"label":null,"file":"channel-letter/side-lit/backboard-cabinet-2.png","source":"Side Lit Channel Letters/Backboard Cabinet (2_)/Side Lit with aluminum cabinet 2 inch.png"},
   {"mounting":"backer-acm-4","thickness":null,"label":null,"file":"channel-letter/side-lit/backer-acm-4.png","source":"Side Lit Channel Letters/Flat ACM Backer (4mm)/Side Lit with flat acm backer.png"},
@@ -102,6 +109,8 @@ export const LIBRARY = [
   {"mounting":"flush","thickness":"3/8″","label":null,"file":"flat/flat-cut-aluminum/3-8in-flush.png","source":"Flat Cut Aluminum Letters/3-8_ thick/Flush Mount/flatcut aluminum 0.375 inch flush.png"},
   {"mounting":"stud","thickness":"3/8″","label":null,"file":"flat/flat-cut-aluminum/3-8in-stud.png","source":"Flat Cut Aluminum Letters/3-8_ thick/Stud Mount/flatcut aluminum 0.375 inch stud.png"},
   {"mounting":"vhb","thickness":"3/8″","label":null,"file":"flat/flat-cut-aluminum/3-8in-vhb.png","source":"Flat Cut Aluminum Letters/3-8_ thick/VHB/flatcut aluminum 0.375 inch VHB.png"}]},
+ {"id":"flat-metal-5mm","title":"5mm metal flat-cut letters","build":"flat","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":"flush","thickness":null,"label":null,"file":"flat/flat-metal-5mm/flush.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /5mm Metal Flush Mount  - White.png"}]},
  {"id":"cabinet-face-lit","title":"Single-sided face-lit cabinet","build":"cabinet","parts":"cabinet-face-lit","source":"ILLUMINATED CABINETS/Single Sided Face Lit Cabinet","drawings":[
   {"mounting":null,"thickness":null,"label":null,"file":"cabinet/cabinet-face-lit/section.png","source":"ILLUMINATED CABINETS/Single Sided Face Lit Cabinet /single sided lightbox.png"}]},
  {"id":"cabinet-double-lit","title":"Double-sided illuminated cabinet","build":"cabinet","source":"ILLUMINATED CABINETS/Double Sided Illuminated Cabinet","drawings":[
@@ -128,19 +137,18 @@ export const LIBRARY = [
   {"mounting":null,"thickness":null,"label":null,"file":"cabinet/blade-nonlit/section.png","source":"BLADE SIGNS/Fabricated Non Illuminated Blade Sign/fabricated non illuminated blade sign.png"}]},
  {"id":"blade-lit","title":"Fabricated illuminated blade sign (double-sided)","build":"cabinet","source":"BLADE SIGNS/Fabricated Illumimated Blade Sign","drawings":[
   {"mounting":null,"thickness":null,"label":null,"file":"cabinet/blade-lit/section.png","source":"BLADE SIGNS/Fabricated Illumimated Blade Sign/Fabricated Blade Sign - Illuminated Double Sided.png"}]},
+ {"id":"blade-2d","title":"2D blade sign","build":"cabinet","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":null,"thickness":null,"label":null,"file":"cabinet/blade-2d/section.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /2D Blade sign - White.png"}]},
+ {"id":"blade-3d-double","title":"3D blade sign, double-sided","build":"cabinet","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":null,"thickness":null,"label":null,"file":"cabinet/blade-3d-double/section.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /3D Blade Sign Double Sided - White.png"}]},
  {"id":"neon-faux","title":"Faux LED neon sign","build":"tube","source":"ILLUMINATED CABINETS/LED Neon Signs/Faux LED Neon Sign","drawings":[
   {"mounting":"ceiling","thickness":null,"label":null,"file":"tube/neon-faux/ceiling.png","source":"ILLUMINATED CABINETS/LED Neon Signs/Faux LED Neon Sign/ceiling mount/neon sign ceiling mount.png"},
   {"mounting":"wall","thickness":null,"label":null,"file":"tube/neon-faux/wall.png","source":"ILLUMINATED CABINETS/LED Neon Signs/Faux LED Neon Sign/wall mount/faux neon wall mount.png"}]},
  {"id":"neon-acrylic","title":"Acrylic neon sign","build":"tube","source":"ILLUMINATED CABINETS/LED Neon Signs/Acrylic Neon Sign","drawings":[
   {"mounting":"ceiling","thickness":null,"label":null,"file":"tube/neon-acrylic/ceiling.png","source":"ILLUMINATED CABINETS/LED Neon Signs/Acrylic Neon Sign/ceiling mouny/acrylic neon sign ceiling mount.png"},
   {"mounting":"wall","thickness":null,"label":null,"file":"tube/neon-acrylic/wall.png","source":"ILLUMINATED CABINETS/LED Neon Signs/Acrylic Neon Sign/wall mount/acrylic neon sign wall mouny.png"}]},
- {"id":"pending","title":"To add or replace","build":null,"pending":true,"source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
-  {"mounting":null,"thickness":null,"label":"2D Blade sign","file":"pending/2d-blade-sign-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /2D Blade sign - White.png"},
-  {"mounting":null,"thickness":null,"label":"3D Blade Sign Double Sided","file":"pending/3d-blade-sign-double-sided-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /3D Blade Sign Double Sided - White.png"},
-  {"mounting":null,"thickness":null,"label":"5mm Metal Flush Mount","file":"pending/5mm-metal-flush-mount-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /5mm Metal Flush Mount  - White.png"},
-  {"mounting":null,"thickness":null,"label":"Front-lit Flush Mount","file":"pending/front-lit-flush-mount-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Front-lit Flush Mount - White.png"},
-  {"mounting":null,"thickness":null,"label":"Front-lit with 2D Backboard","file":"pending/front-lit-with-2d-backboard-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Front-lit with 2D Backboard - White.png"},
-  {"mounting":null,"thickness":null,"label":"Metal Backlit with Backboard","file":"pending/metal-backlit-with-backboard-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Metal Backlit with Backboard - White.png"},
-  {"mounting":null,"thickness":null,"label":"Neon Acrylic Sign","file":"pending/neon-acrylic-sign-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Neon Acrylic Sign - White.png"},
-  {"mounting":null,"thickness":null,"label":"Neon Sign","file":"pending/neon-sign-white.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Neon Sign - White.png"}]},
+ {"id":"neon-white","title":"LED neon sign","build":"tube","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":"wall","thickness":null,"label":null,"file":"tube/neon-white/wall.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Neon Sign - White.png"}]},
+ {"id":"neon-acrylic-white","title":"Acrylic neon sign (white-line set)","build":"tube","ink":"white","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections","drawings":[
+  {"mounting":"wall","thickness":null,"label":null,"file":"tube/neon-acrylic-white/wall.png","source":"Face Lit Channel Letters/WITH TRIM/Flat ACM Backer (4mm)/add -replace cross sections /Neon Acrylic Sign - White.png"}]},
 ];
