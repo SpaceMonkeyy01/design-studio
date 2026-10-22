@@ -31,7 +31,7 @@ Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on th
 app/
   index.html       landing page: build board from registry.mjs; "Open Design Studio" → studio.html, built variants → studio.html?type=<id>
   studio.html, style.css   the 3D studio ("← Build board" and the logo go back); studio.html?type=<registry id> opens that variant
-  registry.mjs     every sign type x variant the studio sells (provided data: do not edit, report problems)
+  registry.mjs     every sign type x variant the studio sells, MOUNTING_SETS per construction, PARTS measured off the cross-sections (generated data: do not edit, report problems)
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
     artwork.mjs    mask cleanup, return rings, region offsets (Clipper)
