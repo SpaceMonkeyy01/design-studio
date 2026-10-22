@@ -74,6 +74,7 @@ flowchart LR
 
 - World units: artwork width is normalised to 4 units. `inch = 4 / widthInches`. The front of the sign is at z≈0 and everything else goes to −z. Halo-lit: face, returns, acrylic back, gap, wall. Face-lit: trim + acrylic face, returns, sealed back, wall (no gap).
 - `studio.html?type=<registry id>` opens one studio variant: `app.js` finds the row in `registry.mjs` and the construction's `VARIANTS` entry (sign type + allowed select options, e.g. face-lit Premium = metallic trims). Unknown, unbuilt or missing ids keep the default and say so in a toast. The registry carries no construction config; that table lives with the construction.
+- Rendering is on demand: `animate()` draws only when the camera moves or after `requestRender()`. Any input/change/click/keydown/wheel/pointerdown event and every scene function (`build`, `setMode`, `refresh*`, `view`, …) already request a frame; code that changes the scene some other way (a timer, an async load) must call `requestRender()` itself. The shadow map is redrawn only on `requestRender()` (the key light is fixed), never for a camera move.
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
 - The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff), plus a face glow plane in front of them.
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.
@@ -108,7 +109,7 @@ flowchart LR
 ## Backlog (ordered)
 
 1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
-2. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
+2. **Performance + cleanup.** Done: render on demand, shadow map only on scene changes (idle 0 draws, orbit ~4.5 ms/frame on HD 530). Open, both change pixels so need sign-off: the preview pixel ratio floor of 1.75 on 1× screens, and the 4096 shadow map size. See `docs/handover/OPTIMIZATION.md`.
 3. **Channel-letter mountings beyond flush** (raceway 2″, three flat backers, backboard cabinet), declared per construction in `MOUNTING_SETS`. Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
 5. Smaller: exploded view clutter at ¾ angle (worse with deep face-lit cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
