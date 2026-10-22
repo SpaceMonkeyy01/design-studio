@@ -41,7 +41,7 @@ app/
     scene.mjs      renderer, lights, camera framing, wall
     shapes.mjs     artwork space → world: pos, shapes, UVs, contours, flat caps
     glow.mjs       light planes: blurred image on an additive plane (halo, face glow)
-    mounting.mjs   the studio's 4 mountings (Flush/Stud built; Raceway, Flat Backer, Backerboard Cabinet declared)
+    mounting.mjs   which mountings of each construction are built (sets come from MOUNTING_SETS in registry.mjs; only channel-letter flush draws geometry)
     hardware.mjs   part groups, LED modules + routed wiring, threaded studs, drain markers
     export.mjs     4K PNG, cutout layers (difference matte), download, contact sheet, project JSON
   signs/
@@ -81,7 +81,7 @@ flowchart LR
 
 - Free only: no paid render or AI services. No paid tools.
 - ≤ 5 s upload → usable frame (measure with `npm run test:visual` on a real GPU).
-- Halo-lit defaults: 1″ depth, ¼″ wall gap, 6500K LEDs, 3/16″ acrylic back, 3–4 mounts per letter, ≥3 L-clamps per letter with 2 screws each. Face-lit defaults are in `signs/channel-letter/CLAUDE.md`. Power supply and junction box stay hidden behind the wall.
+- Halo-lit defaults: 1″ depth, ¼″ wall gap, 6500K LEDs, 3/16″ acrylic back, 3–4 mounts per letter, ≥3 L-clamps per letter with 2 screws each. Face-lit defaults are in `signs/channel-letter/CLAUDE.md`. Power supply and junction box are not drawn: behind the wall for flush mounting, inside the raceway for raceway mounting (`psuInside` in `MOUNTING_SETS`).
 - Units are inches. Currency USD.
 - Keep every live control working (orbit, views, finishes, LEDs, wall photo, modes, inspector, exports, save/load).
 
@@ -106,7 +106,7 @@ flowchart LR
 
 1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
 2. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
-3. **Raceway, Flat Backer and Backerboard Cabinet** geometry, declared in `core/mounting.mjs` (every construction can use them). Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
+3. **Channel-letter mountings beyond flush** (raceway 2″, three flat backers, backboard cabinet), declared per construction in `MOUNTING_SETS`. Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
 5. Smaller: exploded view clutter at ¾ angle (worse with face-lit's 5″ cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 

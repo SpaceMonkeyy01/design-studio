@@ -5,7 +5,7 @@ import {distanceField,componentLabels} from './core/routing.mjs?v=10';
 import {ledColour,finishMaterial,artworkColour,artworkMaterial} from './core/materials.mjs?v=11';
 import {createRenderer,setupScene,fitObject,createWall,wallBackdrop} from './core/scene.mjs?v=11';
 import {download,imagePNG,mattePNG,glowPNG,contactSheet,projectJSON} from './core/export.mjs?v=11';
-import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=3';
+import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=4';
 import {SIGNS as REGISTRY} from './registry.mjs?v=2';
 // Sign types by id (the Sign type control). app.js only talks to a type through this interface (see signs/*/build.mjs).
 // VARIANTS: registry id → {sign, options}, from each construction.

@@ -61,9 +61,14 @@ const built = REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 
 if (Object.keys(VARIANTS).sort().join() !== built) fail('VARIANTS must list exactly the registry rows with build channel-letter and status done');
 for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
   for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t); }
-// Every mounting a config offers must be built in core/mounting.mjs (flush only, until raceway / backers get dimensions).
-const {mounting} = await import('../../../app/core/mounting.mjs');
-for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting(m)?.built)) fail(id + ' offers an unbuilt mounting');
+// Every mounting a config offers must be in the registry's channel-letter set and built (flush only, until raceway / backers get dimensions).
+const {mounting, mountingsFor} = await import('../../../app/core/mounting.mjs');
+for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting('channel-letter', m)?.built)) fail(id + ' offers an unbuilt mounting');
+if (mountingsFor('channel-letter').filter(m => m.built).map(m => m.id).join() !== 'flush') fail('only flush should be built until the shop sends dimensions');
+// An unbuilt mounting is refused by name, never drawn as nothing.
+for (const id of ['raceway-2', 'backer-acm-4', 'nonsense']) { let refused = false; try { sign.build(art, {...settings, mounting: id}, true, renderer); } catch (e) { refused = /not implemented|Unknown/.test(e.message); }
+  if (!refused) fail('mounting ' + id + ' was not refused'); }
+if (!mounting('channel-letter', 'raceway-2').psuInside || mounting('channel-letter', 'flush').psuInside) fail('power supply: inside the raceway, behind the wall for flush');
 // Config switches: the two built constructions resolve; anything else is refused, not half-built.
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
