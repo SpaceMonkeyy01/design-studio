@@ -46,7 +46,7 @@ flowchart LR
 
 ## Shared by every channel-letter construction
 
-- **Returns**: metal sidewalls at the full sign depth (behind the face). Wall = the smaller of .040″ (**ASSUMED** for face-lit) and 22% of the letter's widest mount clearance. Built by Clipper offsetting so thin strokes and sharp corners stay closed. Never translucent and never lit, until `returns: translucent` is built.
+- **Returns**: metal sidewalls at the full sign depth (behind the face). Wall = the smaller of the `PARTS` returns gauge (face-lit 0.0630″; halo-lit's drawing gives none, so .040″ **ASSUMED**) and 22% of the letter's widest mount clearance. Built by Clipper offsetting so thin strokes and sharp corners stay closed. Never translucent and never lit, until `returns: translucent` is built.
 - **LED modules**: 3 lenses each, placed by `layoutModules` and scaled to fit narrow strokes (`core/hardware.mjs`). Facing follows `emit`.
 - **Wiring**: red and white runs between modules, A* routed inside the letter, shown as 18 AWG (illustrative).
 - **Mounts**: 3–4 per letter (Auto, or forced 3 or 4), threaded studs into the wall.
@@ -65,7 +65,7 @@ Light leaves through the back only. The face and returns never glow.
 - **L-clamps**: one per mount (≥3 per letter), 2 screws each: one through the return, one through the acrylic back. Hidden in the Assembled view.
 - **Drain**: one marker at the lowest point of each letter that has LEDs (illustrative).
 - **Halo**: the mask blurred twice and stacked — core σ 0.4″ + gap, wide σ 1″ + 2.5 × gap at 45% — tinted with the LED colour, on an additive plane just in front of the wall. Opacity = intensity × 1.15. Not simulated light.
-- **Defaults**: 48″ wide (4–240″), 1″ depth (custom 0.5–8″; the studio sells 0.75–10″), ¼″ wall gap (0.25–6″), 6500K, 75% intensity, clear acrylic, Auto mounts.
+- **Defaults**: 48″ wide (4–240″), 1″ depth (custom 0.75–10″, from the registry), ¼″ wall gap (0.25–6″), 6500K, 75% intensity, clear acrylic, Auto mounts.
 - **Exploded**: face +.9, LEDs +.6, wires +.4, returns and drain +.2, clamps −.35, acrylic −.55, studs −.7 (world units).
 
 ## Face-lit — `face: acrylic, back: opaque, emit: [front]`
@@ -77,21 +77,21 @@ Shop decisions (2026-10-21):
 | Question | Answer |
 |---|---|
 | Trim | Plastic **and** metallic trim are both sold, with their own colour independent of returns. Default plastic matching the artwork (QC once logged "trims should be black"; still an option). Metallic = brushed silver / gold / bronze. Via `?type=`, Standard shows the plastic trims, Premium the metallic trims and trimless. |
-| Depth, LED throw | 5″ standard (3–8″), modules ~4″ apart. The studio taxonomy says 3″ standard (2.5–10″): to be switched as its own step with before/after screenshots. |
+| Depth, LED throw | 3″ standard (custom 2.5–10″), both from the registry rows. Modules ~4″ apart at every depth (**ASSUMED**: a shallower can may need tighter spacing to avoid hot spots). |
 | Face | User picks: white acrylic + translucent vinyl (follows the artwork) or solid-tinted acrylic (one colour per letter). |
 | Mounting | Flush to the wall, gap 0. The other five channel-letter mountings (`MOUNTING_SETS` in `registry.mjs`) are declared and refused by name until built: see `core/mounting.mjs`. |
 | Mounts | 3–4 per letter (as halo-lit): threaded studs through the back, nut inside the can. No L-clamps (their second screw needs an acrylic back). |
 | LED colour | Full control. The face shows artwork colour × LED colour. |
 | Weep holes | Yes, one per letter (indoor / outdoor is not modelled yet). |
 | Intensity | Opens at 40%. |
-| Small dimensions | **ASSUMED**: trim .06″ thick with a ⅛″ lip, returns .040″, back .063″, face 3/16″. |
+| Small dimensions | From `PARTS` (cross-section, measured): face 3/16″ acrylic, returns 0.0630″ aluminium, back 0.1019″ aluminium. **ASSUMED**: trim .06″ thick with a ⅛″ lip. |
 
 Construction (front → wall):
 
 - **Trim cap**: a 1″ band over the returns plus a ⅛″ lip over the face edge, .06″ thick (lip and thickness **ASSUMED**). Never lit. `trimless` removes it; the face edge then takes the return colour.
-- **Acrylic face**: translucent, cut to the letter outline, 3/16″ **ASSUMED**. Takes no finish: its colour comes from the artwork.
+- **Acrylic face**: translucent, cut to the letter outline, 3/16″ (`PARTS`). Takes no finish: its colour comes from the artwork.
 - **LEDs**: front-facing on the sealed back, ~4″ pitch; a letter too small for that pitch gets halo-lit's denser spacing (every lit letter needs light).
-- **Sealed back**: solid metal, .063″ **ASSUMED**. With the returns it forms a sealed can: no light path to the wall.
+- **Sealed back**: solid aluminium, 0.1019″ (`PARTS`). With the returns it forms a sealed can: no light path to the wall.
 - **Weep hole**: at the lowest point of each letter, just above the back.
 
 What is lit:
@@ -123,5 +123,5 @@ Forbidden looks (from Gemini QC; most became impossible in a deterministic build
 ## Open
 
 - Raceway (2″, 0.1019″ aluminium), the three flat backers (ACM 4mm, acrylic 8mm, aluminium 2.5mm) and Backboard Cabinet (2″): height, overhang and fixings in inches (**ASK**).
-- Face-lit data step (own PR, before/after screenshots): 3″ standard depth (2.5–10″), returns 0.0630″ and back 0.1019″ from `PARTS`, inspector part names and gauges read from `partsFor()`. Return colours: the registry has 9, the UI 3.
+- LED spacing at shallow depths (2.5–3″): modules stay ~4″ apart. Return colours: the registry has 9, the UI 3.
 - Polished metallic trim? Black Logic still wanted? Indoor / outdoor (weep holes) later.
