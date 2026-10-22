@@ -31,6 +31,8 @@ Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on th
 app/
   index.html       landing page: build board from registry.mjs; "Open Design Studio" → studio.html, built variants → studio.html?type=<id>
   studio.html, style.css   the 3D studio ("← Build board" and the logo go back); studio.html?type=<registry id> opens that variant
+  reference.html   construction reference library: every Estimator Side Views cross-section by construction, with PARTS specs and the registry rows sold with it; the studio's "Reference library ↗" opens it at reference.html#<sign id>
+  references/      the cross-section PNGs (provided, unedited: replace a file, never redraw it) + library.mjs, the manifest (sign, mounting, thickness, source path)
   registry.mjs     every sign type x variant the studio sells, MOUNTING_SETS per construction, PARTS measured off the cross-sections (generated data: do not edit, report problems)
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
   core/            shared by EVERY sign type — change with care
@@ -96,6 +98,7 @@ flowchart LR
 
 - **A new variant of an existing construction** (e.g. side-lit channel letters): add its switch combination to that construction's `CONFIGS`, build the pieces it needs inside the same `build.mjs`, expose it in `signs`, add screenshots and test assertions. No new folder.
 - **A new construction** (flat, cabinet, tube, media):
+  0. Read its cross-sections in `reference.html` (`app/references/`) first: they are the shop's drawings, and `PARTS` is read from them.
   1. Create `app/signs/<construction>/` with `build.mjs` and a short `CLAUDE.md` (construction rules, switches, what is lit, defaults).
   2. Reuse `core/` for tracing, finishes, wall, mounting, export. Only write the construction.
   3. Add a fixture logo and a test in `tests/signs/<construction>/`.

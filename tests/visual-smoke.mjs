@@ -85,6 +85,19 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   // And back: the studio's "← Build board" link returns to the landing page.
   await page.click('#boardlink'); const back = await page.waitForSelector('a.cta').then(() => true, () => false);
   results.push({ step: 'landing board click-through', ok: back && untitled === 0 && links.length === 6 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver', links: links.length, untitled, back, studio, halo, premium }); }
+// Reference library (app/reference.html): every drawing loads, the studio's button opens it at the current sign,
+// and a drawing enlarges. Screenshots in test-output/reference/ (not compared: Google Fonts over the network).
+{ fs.mkdirSync(path.join(out, 'reference'), { recursive: true });
+  await page.goto(url + 'studio.html'); const studioHref = await page.getAttribute('#reference', 'href');
+  await page.goto(url + 'index.html'); const boardHref = await page.getAttribute('a.ref', 'href');
+  await page.goto(url + 'reference.html#face-lit'); await page.waitForSelector('.entry.target');
+  const lib = await page.evaluate(async () => { const srcs = [...document.querySelectorAll('.sheet img')].map(i => i.src);
+    const bad = []; for (const s of srcs) { const r = await fetch(s); if (!r.ok || !(r.headers.get('content-type') || '').includes('image/png')) bad.push(s); }
+    return { drawings: srcs.length, bad, target: document.querySelector('.entry.target')?.id, untitled: [...document.querySelectorAll('.sheet figcaption b')].filter(b => !b.textContent.trim()).length }; });
+  await page.waitForTimeout(800); await page.screenshot({ path: path.join(out, 'reference', 'face-lit.png') });
+  await page.click('#face-lit .sheet button >> nth=0'); const dialogOpen = await page.waitForSelector('#viewer[open]').then(() => true, () => false);
+  await page.waitForTimeout(500); await page.screenshot({ path: path.join(out, 'reference', 'viewer.png') });
+  results.push({ step: 'reference library', ok: studioHref === 'reference.html#halo-lit' && boardHref === 'reference.html' && lib.drawings === 109 && !lib.bad.length && lib.target === 'face-lit' && lib.untitled === 0 && dialogOpen, studioHref, boardHref, ...lib, dialogOpen }); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;
