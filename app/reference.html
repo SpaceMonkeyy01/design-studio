@@ -85,7 +85,7 @@ a.v{background:var(--done-soft);border-color:var(--done);color:var(--done);font-
 .sheet figcaption{font-size:.74rem;padding:6px 9px 7px;border-top:1px solid var(--line);display:flex;gap:6px;justify-content:space-between}
 .sheet figcaption b{font-weight:600}
 .sheet figcaption span{color:var(--muted);font-family:var(--mono);font-size:.68rem}
-.pending .sheet button{background:var(--pending)}
+.white .sheet button{background:var(--pending)}
 .note{font-size:.78rem;color:var(--muted);margin:8px 0 0;max-width:72ch}
 .empty{color:var(--muted);font-size:.85rem;padding:26px 0;text-align:center}
 
@@ -127,7 +127,7 @@ footer code{font-family:var(--mono);font-size:.95em}
 </dialog>
 
 <script type="module">
-import { LIBRARY } from './references/library.mjs?v=1';
+import { LIBRARY } from './references/library.mjs?v=2';
 import { SIGNS, BUILDS, MOUNTING_SETS, PARTS, partsFor } from './registry.mjs?v=2';
 
 const ORDER = ['channel-letter','flat','cabinet','tube'];
@@ -135,7 +135,7 @@ const el = (t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=
 const state = { build:'all', q:'' };
 const total = LIBRARY.reduce((n,e)=>n+e.drawings.length,0);
 document.getElementById('sub').textContent =
-  `${total} cross-sections from the Estimator Side Views, ${LIBRARY.filter(e=>!e.pending).length} sign constructions, `
+  `${total} cross-sections from the Estimator Side Views, ${LIBRARY.length} sign constructions, `
   + `grouped by how the studio builds them. Click a drawing to enlarge it.`;
 
 /* mounting label from the construction's MOUNTING_SETS; flat-cut drawings add their thickness */
@@ -144,7 +144,7 @@ const mountRank = (e,d) => { const i=(MOUNTING_SETS[e.build]||[]).findIndex(m=>m
 const inches = t => { const [n,d] = t.replace('″','').split('/'); return d ? n/d : +n; };
 const sorted = e => [...e.drawings].sort((a,b)=> a.thickness && b.thickness && a.thickness!==b.thickness
   ? inches(a.thickness)-inches(b.thickness) : mountRank(e,a)-mountRank(e,b));
-const caption = (e,d) => e.pending ? d.label : (d.thickness ? d.thickness+' · ' : '') + mountLabel(e,d);
+const caption = (e,d) => (d.thickness ? d.thickness+' · ' : '') + mountLabel(e,d);
 
 /* the registry rows sold with this construction (rows whose parts entry is this one) */
 const soldAs = e => e.parts ? SIGNS.filter(s=>s.status!=='excluded' && s.parts===e.parts) : [];
@@ -155,8 +155,7 @@ const search = el('input'); search.type='search'; search.placeholder='Search sig
 search.oninput = ()=>{ state.q=search.value.toLowerCase(); render(); };
 function controlsRow(){
   controls.textContent='';
-  const keys = [['all','All',LIBRARY.length], ...ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b).length]),
-    ['pending','To file',LIBRARY.filter(e=>e.pending).length]];
+  const keys = [['all','All',LIBRARY.length], ...ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b).length])];
   for(const [k,label,n] of keys){ const b=el('button','chip',label); b.type='button'; b.append(el('span','c',String(n)));
     b.setAttribute('aria-pressed', String(state.build===k)); b.onclick=()=>{state.build=k;render();}; controls.append(b); }
   controls.append(el('span','spacer'), search);
@@ -168,7 +167,7 @@ function show(e,d){
   document.getElementById('vtitle').textContent = e.title + ' — ' + caption(e,d);
   const img = document.getElementById('vimg'); img.src = 'references/'+d.file; img.alt = e.title+', '+caption(e,d)+' cross-section';
   document.getElementById('vopen').href = 'references/'+d.file;
-  document.getElementById('vbox').classList.toggle('dark', !!e.pending);
+  document.getElementById('vbox').classList.toggle('dark', e.ink==='white');
   document.getElementById('vsrc').textContent = 'Source: Estimator Side Views/' + d.source;
   viewer.showModal();
 }
@@ -184,12 +183,13 @@ function specRows(p){
     ...(p.note?[['Note',p.note]]:[])];
 }
 function entry(e){
-  const a = el('article','entry'+(e.pending?' pending':'')); a.id = e.id;
+  const a = el('article','entry'+(e.ink==='white'?' white':'')); a.id = e.id;
   const h = el('div','ehead'); h.append(el('h3',null,e.title), el('span','n',`${e.drawings.length} drawing${e.drawings.length>1?'s':''}`)); a.append(h);
   const f = el('div','facts'), p = e.parts ? partsFor({parts:e.parts}) : null;
   if(p) f.append(el('span','fact'+(p.verified?' ok':' si'), p.verified?'measured into PARTS':'PARTS inherited, drawing not read'));
-  else if(!e.pending) f.append(el('span','fact si','not read into the registry yet'));
-  if(e.build && MOUNTING_SETS[e.build]?.length) f.append(el('span','fact',`${new Set(e.drawings.map(d=>d.mounting)).size}/${MOUNTING_SETS[e.build].length} mountings drawn`));
+  else f.append(el('span','fact si','not read into the registry yet'));
+  if(e.ink==='white') f.append(el('span','fact','white-line drawing'));
+  if(!e.ink && MOUNTING_SETS[e.build]?.length) f.append(el('span','fact',`${new Set(e.drawings.map(d=>d.mounting)).size}/${MOUNTING_SETS[e.build].length} mountings drawn`));
   if(f.childNodes.length) a.append(f);
   if(p){ const dl=el('dl','spec'); for(const [k,v] of specRows(p)) dl.append(el('dt',null,k), el('dd',null,v)); a.append(dl); }
   const sold = soldAs(e);
@@ -198,7 +198,6 @@ function entry(e){
       if(r.status==='done'){ const l=el('a','v',label+' ✓'); l.href='studio.html?type='+encodeURIComponent(r.id); l.title='Open in the studio'; s.append(l); }
       else s.append(el('span','v',label)); }
     a.append(s); }
-  if(e.pending) a.append(el('p','note','White-line drawings found inside Face-lit / With trim / Flat ACM Backer / "add -replace cross sections". They show other products and are not filed under a sign yet.'));
   const g = el('div','grid');
   for(const d of sorted(e)){
     const fig = el('figure','sheet'), b = el('button'); b.type='button'; b.title='Enlarge';
@@ -215,7 +214,7 @@ const hit = e => !state.q || (e.title+' '+e.source+' '+e.drawings.map(d=>caption
 const list = document.getElementById('list');
 function render(){
   controlsRow(); list.textContent='';
-  const groups = [...ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b)]), ['pending','To file',LIBRARY.filter(e=>e.pending)]];
+  const groups = ORDER.map(b=>[b,BUILDS[b].label,LIBRARY.filter(e=>e.build===b)]);
   let shown = 0;
   for(const [k,label,entries] of groups){
     if(state.build!=='all' && state.build!==k) continue;
