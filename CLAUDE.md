@@ -56,7 +56,7 @@ qc/                Airtable QC notes + report scripts
 docs/handover/     original ChatGPT handover (read-only history)
 ```
 
-**Sign interface.** Each `signs/<construction>/build.mjs` exports `signs`, one interface object per built config: `{id, label, standardDepth, defaultIntensity (%), build(art,s,isLit,renderer) → {root, parts}, glow (light-plane builder or null; `userData.front` puts it in front of the sign instead of on the wall), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers them in `SIGNS` (ids = the Sign type control's values, also saved in projects) and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
+**Sign interface.** Each `signs/<construction>/build.mjs` exports `signs`, one interface object per built config: `{id, label, standardDepth, depthRange {min,max} (both from the registry rows that open it), defaultIntensity (%), build(art,s,isLit,renderer) → {root, parts}, glow (light-plane builder or null; `userData.front` puts it in front of the sign instead of on the wall), wallDepth(s), wallGap(s), explodedOffsets (object or s => object), componentInfo, parts (explorer buttons), finishParts, internalHidden, assembledHidden, singleParts, hints, specs(s, ledLabel)}`. `app.js` registers them in `SIGNS` (ids = the Sign type control's values, also saved in projects) and never names a part or a sign type directly. Controls only one type uses carry `data-sign="<id>"` in `index.html`. Materials opt into live lighting via `userData`: `glowFactor` (emissive × intensity), `ledLens`, `litColour`/`unlitColour`.
 
 ## Architecture
 
@@ -108,7 +108,7 @@ flowchart LR
 2. **Performance + cleanup.** Render on demand (not always-on), smaller shadow map, pixel ratio clamp. See `docs/handover/OPTIMIZATION.md`.
 3. **Channel-letter mountings beyond flush** (raceway 2″, three flat backers, backboard cabinet), declared per construction in `MOUNTING_SETS`. Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
-5. Smaller: exploded view clutter at ¾ angle (worse with face-lit's 5″ cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
+5. Smaller: exploded view clutter at ¾ angle (worse with deep face-lit cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 
 Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
 

@@ -22,7 +22,7 @@ const art = {mask: cleanArtworkMask(fixture.mask, fixture.w, fixture.h), w: fixt
 art.dist = distanceField(art.mask, art.w, art.h); art.labels = componentLabels(art.mask, art.w, art.h);
 art.loops = groupLoops(smoothLoops(traceMask(art.mask, art.w, art.h)));
 art.colors = art.loops.map((l, i) => ({colour: new THREE.Color(i % 5 ? '#cc2222' : '#000000'), pattern: false}));
-const settings = {signtype: 'face-lit', facetype: 'film', trim: 'black', returns: 'artwork', width: 48, gap: .25, depth: 5, mountcount: 'auto', finish: 'artwork', sheen: 'satin', wallscale: 100, acrylictype: 'clear', paint: '#263c68', led: '6500', cct: 6500, rgb: '#80bfff', intensity: .75, wall: 'plaster'};
+const settings = {signtype: 'face-lit', facetype: 'film', trim: 'black', returns: 'artwork', width: 48, gap: .25, depth: sign.standardDepth, mountcount: 'auto', finish: 'artwork', sheen: 'satin', wallscale: 100, acrylictype: 'clear', paint: '#263c68', led: '6500', cct: 6500, rgb: '#80bfff', intensity: .75, wall: 'plaster'};
 const renderer = {capabilities: {getMaxAnisotropy: () => 1}};
 const fail = msg => { throw new Error('face-lit: ' + msg); };
 const materials = o => (Array.isArray(o.material) ? o.material : [o.material]).filter(Boolean);
@@ -56,6 +56,14 @@ unlit.root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unl
 const trimless = sign.build(art, {...settings, trim: 'none'}, true, renderer);
 if (trimless.parts.trim.children.length) fail('trimless still has a trim cap');
 if (trimless.parts.face.children.length !== pieces) fail('trimless lost face pieces');
+// Data from the registry: depth per sign (every row that opens it agrees) and face-lit gauges from PARTS.
+for (const [id, sg] of Object.entries(signs)) for (const r of REGISTRY.filter(r => VARIANTS[r.id]?.sign === id))
+  if (r.depth.std !== sg.standardDepth || r.depth.min !== sg.depthRange.min || r.depth.max !== sg.depthRange.max) fail(`${id} depth disagrees with registry row ${r.id}`);
+if (sign.standardDepth !== 3) fail('face-lit standard depth should be the registry 3″');
+const inch = 4 / settings.width, backDepth = parts.back.children[0].geometry.parameters.options.depth;
+if (Math.abs(backDepth - .1019 * inch) > 1e-9) fail('sealed back should be the measured 0.1019″, got ' + backDepth / inch);
+if (Math.abs(sign.wallDepth(settings) - (settings.depth + .1019) * inch) > 1e-9) fail('wall must touch the 0.1019″ back');
+for (const depth of [sign.depthRange.min, sign.depthRange.max]) sign.build(art, {...settings, depth}, true, renderer).root.traverse(o => { if (o.geometry && !o.geometry.attributes.position.array.every(Number.isFinite)) fail('invalid geometry at ' + depth + '″'); });
 // ?type= table: exactly the registry's built channel-letter rows, each opening a real sign with real select options.
 const built = REGISTRY.filter(r => r.build === 'channel-letter' && r.status === 'done').map(r => r.id).sort().join();
 if (Object.keys(VARIANTS).sort().join() !== built) fail('VARIANTS must list exactly the registry rows with build channel-letter and status done');
