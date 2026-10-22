@@ -73,6 +73,13 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   results.push({ step: 'face-lit upload ' + path.basename(fixtures[0]), ms, ok: colour.facePixels > 1000 && colour.faceValue > colour.wallValue && colour.faceSat > .45, ...colour });
   await click('#unlit'); await snap('14-face-lit-unlit'); await click('#lit');
   const accent = fileURLToPath(new URL('fixtures/logo-dark-accent.png', import.meta.url)); results.push({ step: 'face-lit upload logo-dark-accent.png', ms: await uploadAndWait(accent) }); await click('[data-view=front]'); await snap('15-face-lit-dark-accent');
+  // Fabricated non-lit (16–18): no Lit/Unlit toggle, daylight view; polished gold, exploded, painted in the logo's colours.
+  await choose('signtype', 'fabricated-nonlit'); await page.waitForFunction(() => /^Fabricated/.test(document.getElementById('status').textContent));
+  const fabUI = await page.evaluate(() => ({ lightingHidden: document.getElementById('lighting').hidden, unlit: document.getElementById('unlit').classList.contains('active'), ledHidden: document.querySelector('[data-sign="halo-lit face-lit"]').hidden }));
+  await choose('finish', 'gold-mirror'); await click('[data-view=front]'); await snap('16-fabricated-gold-mirror');
+  await click('[data-mode=exploded]'); await snap('17-fabricated-exploded'); await click('[data-mode=assembled]');
+  await choose('finish', 'artwork'); await snap('18-fabricated-painted');
+  results.push({ step: 'fabricated non-lit', ok: fabUI.lightingHidden && fabUI.unlit && fabUI.ledHidden, ...fabUI });
   await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
 // Build board = landing page (app/index.html): every built variant links into the studio, and "Open Design Studio" opens it
 // with the default sign. Click through to the studio, halo-lit and face-lit Premium.

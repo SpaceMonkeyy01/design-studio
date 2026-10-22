@@ -27,6 +27,7 @@ Built today:
 |---|---|---|---|---|---|
 | halo-lit | opaque | opaque | acrylic | back | halo on the wall (`haloGlow`) |
 | face-lit | acrylic | opaque | opaque | front | face glow in front of the face (`faceGlow`) |
+| fabricated-nonlit | opaque | opaque | none | — | none (`lit: false`) |
 
 Any other combination (side-lit, face & halo, face & side, infinity mirror's half-mirror face, open-face neon…) throws "construction not built yet" instead of rendering something half-right. Wiring one up means adding its pieces and its row to `CONFIGS`, plus screenshots.
 
@@ -110,15 +111,26 @@ Forbidden looks (from Gemini QC; most became impossible in a deterministic build
 - Glowing returns or trim. Hardware from an unselected mounting appearing (a backer or raceway strip under flush).
 - Complaints were about dim faces far more than colour (≈5:1): err bright.
 
+## Fabricated non-lit — `back: none, emit: []`
+
+From the Estimator cross-section (`references/channel-letter/fabricated-nonlit/flush.png`, `PARTS['fabricated-nonlit']`):
+
+- **Face**: 0.1019″ aluminium, the shared metal face (`metalFace`, same bevel and flat caps as halo-lit's, which is .045″ because its drawing gives no gauge). Takes the selected finish.
+- **Returns**: 0.0630″ aluminium, same finish as the face, from the face back to the wall. They sit **on** the wall: no gap, no back panel (open can).
+- **Studs**: 3–4 ¼″Ø threaded studs per letter, welded to the back of the face (boss + thread), through the empty can into the wall.
+- **Nothing else**: no LEDs, wiring, drain, clamps or light plane. `lit: false` hides Lit/Unlit and the LED/intensity controls (`data-sign="halo-lit face-lit"`), and shows the daylight (unlit) view; switching back to a lit sign turns lighting back on. The view sheet captures only the 6 unlit views.
+- **Defaults**: 1″ depth (0.75–10″, registry), 48″ wide, flush.
+- **Variants**: one finish each (Polished/Brushed Gold, Bronze, Silver → `*-mirror` / `*-brushed`); "Painted Finish (Same as logo)" offers artwork colours, black, white or custom paint (matte / satin / gloss sheen). The registry's ninth finish, **Bronze Antique**, has no material yet (**ASK** before inventing one).
+
 ## Variants (registry ids)
 
-`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. `stand_in` in the registry is a pricing placeholder, never a construction hint.
+`app/registry.mjs` lists every studio variant; its rows have no construction config, so the mapping lives in `app.js` / this folder (see root `CLAUDE.md`). Built rows: Halo-Lit (Back-lit), Face Lit (Premium Channel Letters), Face-Lit (Standard Channel Letter), each indoor and outdoor. The 7 Dimensional Fabricated Letters rows have variants too, but their registry status is still `todo`: their `?type=` links and build-board entries switch on when the source registry marks them `done` (the test lists them as waiting). `stand_in` in the registry is a pricing placeholder, never a construction hint.
 
 ## Tests
 
-- `tests/signs/channel-letter/build-check.mjs` (in `npm test`): face-lit part list (no halo, acrylic back, clamps, raceway or backer), piece counts, ≥3 mounts and one weep hole per piece, LEDs present, only face and LED lenses glow, nothing lit behind the sealed back, face glow in front, unlit = no emissive, trimless removes only the trim; halo-lit config builds an acrylic back with clamps; unbuilt switch combinations are refused.
+- `tests/signs/channel-letter/build-check.mjs` (in `npm test`): face-lit part list (no halo, acrylic back, clamps, raceway or backer), piece counts, ≥3 mounts and one weep hole per piece, LEDs present, only face and LED lenses glow, nothing lit behind the sealed back, face glow in front, unlit = no emissive, trimless removes only the trim; halo-lit config builds an acrylic back with clamps; fabricated: face/returns/studs only, nothing glows lit or unlit, 0.1019″ face, returns reach the wall, depth from the registry; unbuilt switch combinations are refused.
 - `tests/runtime-smoke.mjs`: 27 pieces and ≥81 clamps for halo-lit; switching halo-lit → face-lit → halo-lit in the app.
-- `tests/visual-smoke.mjs`: screenshots 01–09 halo-lit, 10–15 face-lit. On plaster the white face measures 0.93 vs wall 0.76 luminance; the colour face 0.86 value vs 0.77, saturation > 0.45. Fixture `logo-dark-accent.png` shows dark accents staying unlit.
+- `tests/visual-smoke.mjs`: screenshots 01–09 halo-lit, 10–15 face-lit, 16–18 fabricated (polished gold, exploded, painted; Lit/Unlit and LED controls hidden). On plaster the white face measures 0.93 vs wall 0.76 luminance; the colour face 0.86 value vs 0.77, saturation > 0.45. Fixture `logo-dark-accent.png` shows dark accents staying unlit.
 
 ## Open
 
