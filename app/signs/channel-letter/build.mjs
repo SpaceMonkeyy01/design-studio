@@ -5,19 +5,22 @@ import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=11';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
 import {glowPlane} from '../../core/glow.mjs?v=1';
+import {builtMounting} from '../../core/mounting.mjs?v=2';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=1';
 // Channel letters: a traced can (face + returns + back). One parametric build for every channel-letter variant;
 // the variant is a construction config, not code. See CLAUDE.md in this folder.
-//   face    opaque | acrylic | none | half-mirror
-//   returns opaque | translucent
-//   back    opaque | acrylic | mirror
-//   emit    subset of front, back, side
+//   face      opaque | acrylic | none | half-mirror
+//   faceVinyl true = opaque vinyl over the acrylic face (side-lit: the same acrylic face, not an opaque face part)
+//   returns   opaque | translucent
+//   back      opaque | acrylic | mirror | none (open-back can: fabricated non-lit)
+//   emit      subset of front, back, side
+// Materials and gauges per part are PARTS in registry.mjs; these switches only say how light gets out.
 // Built today: halo-lit {opaque, opaque, acrylic, [back]} and face-lit {acrylic, opaque, opaque, [front]}.
 export const CONFIGS={
  'halo-lit':{face:'opaque',returns:'opaque',back:'acrylic',emit:['back']},
  'face-lit':{face:'acrylic',returns:'opaque',back:'opaque',emit:['front']},
 };
-const key=c=>[c.face,c.returns,c.back,[...c.emit].sort().join('+')].join('/'),BUILT=new Map(Object.entries(CONFIGS).map(([id,c])=>[key(c),id]));
+const key=c=>[c.face+(c.faceVinyl?'+vinyl':''),c.returns,c.back,[...c.emit].sort().join('+')].join('/'),BUILT=new Map(Object.entries(CONFIGS).map(([id,c])=>[key(c),id]));
 // The construction a config describes. Other switch combinations (side-lit, face & halo, infinity mirror…) are not built yet.
 function construction(cfg){const id=BUILT.get(key(cfg));if(!id)throw new Error('Channel-letter construction not built yet: '+key(cfg));return id;}
 
@@ -52,7 +55,7 @@ function acrylicFaceMaterial(art,s,isLit,modules){const w=art.w,h=art.h,{tint,pa
 // Builds one sign for a traced artwork, settings snapshot and construction config. Returns {root, parts}, one group per part.
 // Pieces are created in each construction's original order: material ids decide the draw order of coplanar surfaces,
 // so reordering would move pixels.
-export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construction(cfg),rearLit=cfg.back==='acrylic';
+export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construction(cfg),rearLit=cfg.back==='acrylic';builtMounting('channel-letter',s.mounting||'flush');
  const {root,parts,addPart}=partSet(rearLit?['face','returns','acrylic','leds','studs','wires','drain','clamps']:['trim','face','returns','leds','wires','back','studs','drain']);
  const {pos,shapes,uv,contours}=artSpace(art),C=window.ClipperLib;
  const inch=4/s.width,depth=s.depth*inch,gap=rearLit?s.gap*inch:0,acrylicT=ACRYLIC*inch,backT=BACK*inch,trimT=TRIM*inch,band=Math.min(TRIM_BAND,s.depth*.5)*inch,lip=LIP*inch;

@@ -8,12 +8,18 @@ Marked **ASSUMED** = a guess, check it. Marked **ASK** = a real dimension we do 
 
 ## Construction switches
 
-| Switch  | Values                                           |
-|---------|--------------------------------------------------|
-| face    | `opaque` \| `acrylic` \| `none` \| `half-mirror` |
-| returns | `opaque` \| `translucent`                        |
-| back    | `opaque` \| `acrylic` \| `mirror`                |
-| emit    | subset of `front`, `back`, `side`                |
+| Switch    | Values                                                   |
+|-----------|----------------------------------------------------------|
+| face      | `opaque` \| `acrylic` \| `none` \| `half-mirror`         |
+| faceVinyl | `true` = opaque vinyl over the acrylic face              |
+| returns   | `opaque` \| `translucent`                                |
+| back      | `opaque` \| `acrylic` \| `mirror` \| `none`              |
+| emit      | subset of `front`, `back`, `side`                        |
+
+The switches say how light leaves the can. What each part is made of (and how thick) is `PARTS` in `registry.mjs`, measured off the Estimator cross-sections; an entry with `verified:false` is inherited, not measured.
+
+- **Side-lit** is `{face: acrylic, faceVinyl: true, returns: translucent, back: opaque, emit: [side]}`: the same 3/16″ acrylic face as face-lit made opaque with vinyl, plus 3/16″ acrylic returns. Never model it as an opaque face part.
+- **Fabricated non-lit** is `back: none`: open-back can, no LEDs, wiring or drain.
 
 Built today:
 
@@ -45,7 +51,7 @@ flowchart LR
 - **Wiring**: red and white runs between modules, A* routed inside the letter, shown as 18 AWG (illustrative).
 - **Mounts**: 3–4 per letter (Auto, or forced 3 or 4), threaded studs into the wall.
 - **Tiny pieces** (under 8 px² or 0.2% of the largest piece in the 960 px mask) get face, returns and back, but no LEDs, wiring, mounts, clamps or drain.
-- **Not modelled**: power supply and junction box (behind the wall).
+- **Not modelled**: power supply and junction box. With flush mounting (the only one built) they sit behind the wall; with raceway they sit inside the raceway (`psuInside` in `MOUNTING_SETS`).
 - **Unlit mode**: every emissive is 0 and the light plane is hidden.
 
 ## Halo-lit (reverse) — `back: acrylic, emit: [back]`
@@ -73,7 +79,7 @@ Shop decisions (2026-10-21):
 | Trim | Plastic **and** metallic trim are both sold, with their own colour independent of returns. Default plastic matching the artwork (QC once logged "trims should be black"; still an option). Metallic = brushed silver / gold / bronze. Via `?type=`, Standard shows the plastic trims, Premium the metallic trims and trimless. |
 | Depth, LED throw | 5″ standard (3–8″), modules ~4″ apart. The studio taxonomy says 3″ standard (2.5–10″): to be switched as its own step with before/after screenshots. |
 | Face | User picks: white acrylic + translucent vinyl (follows the artwork) or solid-tinted acrylic (one colour per letter). |
-| Mounting | Flush to the wall, gap 0. Other mountings: see `core/mounting.mjs`. |
+| Mounting | Flush to the wall, gap 0. The other five channel-letter mountings (`MOUNTING_SETS` in `registry.mjs`) are declared and refused by name until built: see `core/mounting.mjs`. |
 | Mounts | 3–4 per letter (as halo-lit): threaded studs through the back, nut inside the can. No L-clamps (their second screw needs an acrylic back). |
 | LED colour | Full control. The face shows artwork colour × LED colour. |
 | Weep holes | Yes, one per letter (indoor / outdoor is not modelled yet). |
@@ -116,6 +122,6 @@ Forbidden looks (from Gemini QC; most became impossible in a deterministic build
 
 ## Open
 
-- Raceway, Flat Backer and Backerboard Cabinet dimensions in inches (**ASK**).
-- Face-lit 3″ standard depth (separate step). Return colours: the registry has 9, the UI 3.
+- Raceway (2″, 0.1019″ aluminium), the three flat backers (ACM 4mm, acrylic 8mm, aluminium 2.5mm) and Backboard Cabinet (2″): height, overhang and fixings in inches (**ASK**).
+- Face-lit data step (own PR, before/after screenshots): 3″ standard depth (2.5–10″), returns 0.0630″ and back 0.1019″ from `PARTS`, inspector part names and gauges read from `partsFor()`. Return colours: the registry has 9, the UI 3.
 - Polished metallic trim? Black Logic still wanted? Indoor / outdoor (weep holes) later.

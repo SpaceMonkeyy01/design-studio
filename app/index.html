@@ -97,6 +97,7 @@ input[type=search]{font:inherit;font-size:.82rem;padding:6px 11px;border-radius:
 .fact{border:1px solid var(--line);border-radius:4px;padding:1px 5px;white-space:nowrap}
 .fact.build{font-family:var(--sans);border-color:var(--accent);color:var(--accent)}
 .fact.si{border-style:dashed}
+.fact.ok{border-color:var(--done);color:var(--done)}
 .vars{display:flex;flex-wrap:wrap;gap:5px;margin-top:1px}
 .v{font-size:.73rem;padding:3px 8px;border-radius:5px;border:1px solid var(--line);
   color:var(--muted);text-decoration:none;display:inline-block;max-width:100%;overflow-wrap:anywhere}
@@ -128,12 +129,13 @@ footer code{font-family:var(--mono);font-size:.95em}
     Grouped the way the studio is: <b>Category → Sign Type → Variant</b>. Green variants are built and
     open in the studio (<b>Open Design Studio</b> opens it with the default sign). Depths are the studio standard, in inches. <b>Pricing stand-in</b> marks a
     sign type costed with Halo-Lit pricing as a placeholder — a pricing to-do, never a construction hint.
-    Everything comes from <code>registry.mjs</code>.
+    Green part specs were measured off an Estimator cross-section; dashed ones are inherited or
+    unread. Everything comes from <code>registry.mjs</code>.
   </footer>
 </div>
 
 <script type="module">
-import { SIGNS, BUILDS } from './registry.mjs';
+import { SIGNS, BUILDS, PARTS, partsFor, mountingsFor } from './registry.mjs';
 
 const CATS = ['Illuminated','Non-Illuminated','Building/Wall Signs','Freestanding Signs','Specialty Signs'];
 const live = SIGNS.filter(s => s.status !== 'excluded');
@@ -166,6 +168,7 @@ document.getElementById('sub').textContent =
   + `${live.length} variants, built on ${new Set(live.map(s=>s.build)).size} shared constructions.`;
 [[`${done}/${live.length}`,'Variants built','ok'],
  [`${typesDone.length}/${types.size}`,'Sign types complete',''],
+ [live.filter(s=>PARTS[s.parts]?.verified).length,'Measured from drawings',''],
  [new Set(live.map(s=>s.build)).size,'Constructions',''],
  [SIGNS.filter(s=>s.stand_in).length,'Pricing stand-ins','']]
  .forEach(([n,l,c])=>{const d=el('div','fig'+(c?' '+c:''));
@@ -220,8 +223,15 @@ function tile(signType, vars){
     const std=[...new Set(dep.map(x=>x.std))].sort((a,b)=>a-b);
     f.append(el('span','fact',`${std.join('/')}″ std`));
   }
-  const mc = Math.max(...vars.map(s=>(s.mounting||[]).length));
-  if(mc) f.append(el('span','fact',`${mc} mounting`));
+  const ms = mountingsFor(vars[0]);
+  if(ms && ms.length) f.append(el('span','fact',`${ms.length} mounting`));
+  const pt = vars.map(partsFor).find(Boolean);
+  if(pt && pt.face){
+    const th = pt.face.thickness ? pt.face.thickness+' ' : '';
+    f.append(el('span','fact'+(pt.verified?' ok':' si'), `${th}${pt.face.material} face`));
+  } else if(!pt){
+    f.append(el('span','fact si','no cross-section'));
+  }
   const rc = vars.find(s=>s.returnColors);
   if(rc) f.append(el('span','fact',`${rc.returnColors.length} return colors`));
   if(vars.some(s=>s.ul)) f.append(el('span','fact','UL'));
