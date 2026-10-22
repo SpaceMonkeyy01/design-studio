@@ -55,8 +55,8 @@ for (const [name, act] of steps) { await act(); await snap(String(n++).padStart(
 // Face-lit (screenshots 10+). The face must read as lit, not paint: brighter than the wall and, for colour, still saturated.
 // Shot with and without the wall: sign pixels are identical in both, wall pixels change. Face = sign pixels that are not dark (trim).
 const faceVsWall = async () => { await page.waitForTimeout(1000); const clip = await stage.boundingBox(), withWall = await page.screenshot({ clip });
-  await page.evaluate(() => { const e = document.getElementById('showwall'); e.checked = false; }); await page.waitForTimeout(800); const noWall = await page.screenshot({ clip });
-  await page.evaluate(() => { document.getElementById('showwall').checked = true; }); await page.waitForTimeout(500);
+  await page.evaluate(() => { const e = document.getElementById('showwall'); e.checked = false; e.dispatchEvent(new Event('change', { bubbles: true })); }); await page.waitForTimeout(800); const noWall = await page.screenshot({ clip });
+  await page.evaluate(() => { const e = document.getElementById('showwall'); e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); }); await page.waitForTimeout(500);
   return page.evaluate(async ([a, b]) => { const load = async src => { const im = new Image(); im.src = src; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return x.getImageData(0, 0, c.width, c.height).data; };
     const A = await load(a), B = await load(b), face = [], wall = [], med = v => v.sort((p, q) => p - q)[v.length >> 1] ?? 0;
     for (let i = 0; i < A.length; i += 16) { const diff = Math.max(Math.abs(A[i] - B[i]), Math.abs(A[i + 1] - B[i + 1]), Math.abs(A[i + 2] - B[i + 2])), r = A[i] / 255, g = A[i + 1] / 255, bl = A[i + 2] / 255, v = Math.max(r, g, bl), sat = v ? 1 - Math.min(r, g, bl) / v : 0, lum = .2126 * r + .7152 * g + .0722 * bl;
