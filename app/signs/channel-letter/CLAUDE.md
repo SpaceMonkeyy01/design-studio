@@ -126,7 +126,7 @@ From the Estimator cross-section (`references/channel-letter/side-lit/flush.png`
 - **Wall spill** (`sideGlow`): the mask blurred (core σ 0.35″, wide 1.4″) in the LED colour on an additive plane just in front of the wall (or the backer / cabinet front), strength 1.5 × intensity. Only the part outside the letters shows. Tuned on screenshots 20–22.
 - **LEDs, back, studs, weep holes**: as face-lit (front-facing modules ~4″ apart on the 0.1019″ sealed back, flush studs). No trim. Every mounting works.
 - **Defaults**: 1″ depth (0.75–10″, registry), 75% intensity, 6500K.
-- **Registry**: the two Side-Lit rows are in `VARIANTS` but still `todo` in `registry.mjs` (generated data), so `?type=` refuses them until the source marks them done. Side-lit is open from the Sign type control.
+- **Registry**: the two Side-Lit rows were set to `done` by hand on 2026-10-23 at the user's request (as the fabricated rows were): the source generator must mark them done too, or the next regeneration reverts it.
 
 ## Fabricated non-lit — `back: none, emit: []`
 
