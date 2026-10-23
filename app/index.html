@@ -138,7 +138,8 @@ footer code{font-family:var(--mono);font-size:.95em}
 </div>
 
 <script type="module">
-import { SIGNS, BUILDS, PARTS, partsFor, mountingsFor } from './registry.mjs';
+import { SIGNS, BUILDS, PARTS, partsFor } from './registry.mjs';
+import { mountingsFor } from './core/mounting.mjs';
 
 const CATS = ['Illuminated','Non-Illuminated','Building/Wall Signs','Freestanding Signs','Specialty Signs'];
 const live = SIGNS.filter(s => s.status !== 'excluded');
@@ -226,8 +227,10 @@ function tile(signType, vars){
     const std=[...new Set(dep.map(x=>x.std))].sort((a,b)=>a-b);
     f.append(el('span','fact',`${std.join('/')}″ std`));
   }
-  const ms = mountingsFor(vars[0]);
-  if(ms && ms.length) f.append(el('span','fact',`${ms.length} mounting`));
+  // Mountings: on a sign type with built variants, how many of its construction's mountings the studio draws (core/mounting.mjs);
+  // elsewhere just how many it offers, so an unbuilt sign type never reads as built.
+  const ms = mountingsFor(vars[0].build);
+  if(ms && ms.length) f.append(el('span','fact',vars.some(v=>v.status==='done')?`${ms.filter(m=>m.built).length}/${ms.length} mountings built`:`${ms.length} mountings`));
   const pt = vars.map(partsFor).find(Boolean);
   if(pt && pt.face){
     const th = pt.face.thickness ? pt.face.thickness+' ' : '';

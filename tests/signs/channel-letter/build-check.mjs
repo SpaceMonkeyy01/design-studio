@@ -73,20 +73,57 @@ const waiting = Object.keys(VARIANTS).filter(id => rows.get(id).status !== 'done
 for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
   for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t);
   for (const f of v.options?.finish || []) if (!['artwork', 'silver-brushed', 'silver-mirror', 'gold-brushed', 'gold-mirror', 'bronze-brushed', 'bronze-mirror', 'bronze-antique', 'black', 'white', 'custom'].includes(f)) fail(id + ': unknown finish ' + f); }
-// Every mounting a config offers must be in the registry's channel-letter set and built (flush only, until raceway / backers get dimensions).
+// Every mounting a config offers must be in the registry's channel-letter set and built: all six channel-letter mountings.
 const {mounting, mountingsFor} = await import('../../../app/core/mounting.mjs');
 for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting('channel-letter', m)?.built)) fail(id + ' offers an unbuilt mounting');
-if (mountingsFor('channel-letter').filter(m => m.built).map(m => m.id).join() !== 'flush') fail('only flush should be built until the shop sends dimensions');
+if (mountingsFor('channel-letter').filter(m => m.built).map(m => m.id).join() !== 'flush,raceway-2,backer-acm-4,backer-acrylic-8,backer-aluminum-25,backboard-cabinet-2') fail('every channel-letter mounting should be built');
 // An unbuilt mounting is refused by name, never drawn as nothing.
-for (const id of ['raceway-2', 'backer-acm-4', 'nonsense']) { let refused = false; try { sign.build(art, {...settings, mounting: id}, true, renderer); } catch (e) { refused = /not implemented|Unknown/.test(e.message); }
+for (const id of ['nonsense']) { let refused = false; try { sign.build(art, {...settings, mounting: id}, true, renderer); } catch (e) { refused = /not implemented|Unknown/.test(e.message); }
   if (!refused) fail('mounting ' + id + ' was not refused'); }
+// Flat backers, every sign × backer: a panel of the drawing's thickness whose back is on the wall and whose front is where the wall
+// was under flush; the wall moves back by exactly that thickness; studs reach through it into the wall; margin as set.
+for (const [id, sg] of Object.entries(signs)) for (const [mid, mm] of [['backer-acm-4', 4], ['backer-acrylic-8', 8], ['backer-aluminum-25', 2.5]]) {
+  const st = {...settings, signtype: id, depth: sg.standardDepth, mounting: mid, backermargin: 3, backercolour: 'clear'}, flushSt = {...st, mounting: 'flush'}, inch = 4 / st.width, t = mm / 25.4 * inch;
+  const b = sg.build(art, st, true, renderer); b.root.updateMatrixWorld(true); const what = id + ' / ' + mid + ': ';
+  if (b.parts.backer?.children.length !== 1) fail(what + 'expected one backer panel');
+  const panel = new THREE.Box3().setFromObject(b.parts.backer), wall = -(sg.wallDepth(st) + sg.wallGap(st)), flushWall = -(sg.wallDepth(flushSt) + sg.wallGap(flushSt));
+  if (Math.abs(sg.wallDepth(st) - sg.wallDepth(flushSt) - t) > 1e-9) fail(what + 'wall should move back by the backer thickness');
+  if (Math.abs(panel.min.z - wall) > 1e-6 || Math.abs(panel.max.z - flushWall) > 1e-6) fail(what + `panel ${panel.min.z / inch}…${panel.max.z / inch}″ should span the wall ${wall / inch}″ to ${flushWall / inch}″`);
+  if (Math.abs(panel.max.x - panel.min.x - (4 + 6 * inch)) > 1e-6 || Math.abs(panel.max.y - panel.min.y - (4 * art.h / art.w + 6 * inch)) > 1e-6) fail(what + 'panel should be the artwork plus a 3″ margin');
+  if (new THREE.Box3().setFromObject(b.parts.studs).min.z > wall - 1e-6) fail(what + 'studs must reach through the backer into the wall');
+  const mat = b.parts.backer.children[0].material; if ((mid === 'backer-acrylic-8') !== !!mat.transparent) fail(what + 'clear is for acrylic only (others draw white)');
+  const offsets = typeof sg.explodedOffsets === 'function' ? sg.explodedOffsets(st) : sg.explodedOffsets; if (!(offsets.backer < 0)) fail(what + 'backer must move back in the exploded view');
+  if (!(typeof sg.parts === 'function' ? sg.parts(st) : sg.parts).some(([n]) => n === 'backer') || !sg.componentInfo.backer) fail(what + 'backer needs an explorer button and inspector text'); }
+// Raceway, every sign: a 2″-deep box whose back is on the wall and whose front is where the wall was under flush; 5″ tall, the
+// sign's width less 2″ at each end, centred on the artwork; the wall moves back by 2″; studs reach the wall.
+for (const [id, sg] of Object.entries(signs)) { const st = {...settings, signtype: id, depth: sg.standardDepth, mounting: 'raceway-2', racewayheight: 5, backercolour: 'black'}, flushSt = {...st, mounting: 'flush'}, inch = 4 / st.width, what = id + ' / raceway: ';
+  const r = sg.build(art, st, true, renderer); r.root.updateMatrixWorld(true); if (r.parts.raceway?.children.length !== 1 || r.parts.backer) fail(what + 'expected one raceway and no backer');
+  const box = new THREE.Box3().setFromObject(r.parts.raceway), wall = -(sg.wallDepth(st) + sg.wallGap(st)), flushWall = -(sg.wallDepth(flushSt) + sg.wallGap(flushSt));
+  if (Math.abs(sg.wallDepth(st) - sg.wallDepth(flushSt) - 2 * inch) > 1e-9) fail(what + 'wall should move back by 2″');
+  if (Math.abs(box.min.z - wall) > 1e-6 || Math.abs(box.max.z - flushWall) > 1e-6) fail(what + 'raceway should span the wall to the letters');
+  if (Math.abs(box.max.y - box.min.y - 5 * inch) > 1e-6 || Math.abs(box.max.x - box.min.x - (4 - 4 * inch)) > 1e-6 || Math.abs(box.max.x + box.min.x) > 1e-6 || Math.abs(box.max.y + box.min.y) > 1e-6) fail(what + 'raceway should be 5″ tall, 2″ in from each end, centred');
+  if (new THREE.Box3().setFromObject(r.parts.studs).min.z > wall - 1e-6) fail(what + 'studs must reach the wall');
+  const c = new THREE.Vector3(); if (!r.parts.studs.children.length || r.parts.studs.children.some(m => Math.abs(new THREE.Box3().setFromObject(m).getCenter(c).y) > box.max.y + 1e-6 || Math.abs(c.x) > box.max.x + 1e-6)) fail(what + 'every stud mount must land on the raceway');
+  const offsets = typeof sg.explodedOffsets === 'function' ? sg.explodedOffsets(st) : sg.explodedOffsets; if (!(offsets.raceway < 0) || 'backer' in offsets) fail(what + 'raceway (only) moves back in the exploded view');
+  if (!sg.parts(st).some(([n]) => n === 'raceway') || !sg.componentInfo.raceway) fail(what + 'needs an explorer button and inspector text'); }
+// Backboard cabinet, every sign: a 2″-deep box, the artwork plus a 3″ margin, back on the wall, front where the wall was; studs reach the wall.
+for (const [id, sg] of Object.entries(signs)) { const st = {...settings, signtype: id, depth: sg.standardDepth, mounting: 'backboard-cabinet-2', backermargin: 3, backercolour: 'clear'}, flushSt = {...st, mounting: 'flush'}, inch = 4 / st.width, what = id + ' / cabinet: ';
+  const c = sg.build(art, st, true, renderer); c.root.updateMatrixWorld(true); if (c.parts.cabinet?.children.length !== 1 || c.parts.backer || c.parts.raceway) fail(what + 'expected one cabinet only');
+  const box = new THREE.Box3().setFromObject(c.parts.cabinet), wall = -(sg.wallDepth(st) + sg.wallGap(st)), flushWall = -(sg.wallDepth(flushSt) + sg.wallGap(flushSt));
+  if (Math.abs(sg.wallDepth(st) - sg.wallDepth(flushSt) - 2 * inch) > 1e-9 || Math.abs(box.min.z - wall) > 1e-6 || Math.abs(box.max.z - flushWall) > 1e-6) fail(what + 'cabinet should be 2″ deep, from the wall to the letters');
+  if (Math.abs(box.max.x - box.min.x - (4 + 6 * inch)) > 1e-6 || Math.abs(box.max.y - box.min.y - (4 * art.h / art.w + 6 * inch)) > 1e-6) fail(what + 'cabinet should be the artwork plus a 3″ margin');
+  if (new THREE.Box3().setFromObject(c.parts.studs).min.z > wall - 1e-6) fail(what + 'studs must reach the wall');
+  if (c.parts.cabinet.children[0].material.transparent) fail(what + 'clear is for an acrylic backer only');
+  if (!(sg.explodedOffsets(st).cabinet < 0) || !sg.parts(st).some(([n]) => n === 'cabinet') || !sg.componentInfo.cabinet) fail(what + 'needs an exploded offset, explorer button and inspector text'); }
+for (const [id, sg] of Object.entries(signs)) { const f = sg.build(art, {...settings, signtype: id, depth: sg.standardDepth, mounting: 'flush'}, true, renderer);
+  if (f.parts.backer || f.parts.raceway || f.parts.cabinet || (typeof sg.parts === 'function' ? sg.parts(settings) : sg.parts).some(([n]) => ['backer', 'raceway', 'cabinet'].includes(n))) fail(id + ': flush must have no backer, raceway or cabinet'); }
 if (!mounting('channel-letter', 'raceway-2').psuInside || mounting('channel-letter', 'flush').psuInside) fail('power supply: inside the raceway, behind the wall for flush');
 // Config switches: the two built constructions resolve; anything else is refused, not half-built.
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
 if (!halo.parts.acrylic?.children.length || halo.parts.clamps.children.length < 3 * meaningful || halo.parts.trim) fail('halo-lit config did not build an acrylic back with clamps');
-for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'acrylic', faceVinyl: true, returns: 'translucent', back: 'opaque', emit: ['side']},
-  {face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']}, {face: 'opaque', returns: 'opaque', back: 'opaque', emit: []}]) {
+for (const cfg of [{face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']},
+  {face: 'opaque', returns: 'opaque', back: 'opaque', emit: []}]) {
   let refused = false; try { buildChannelLetter(art, settings, true, renderer, cfg); } catch (e) { refused = /not built yet/.test(e.message); }
   if (!refused) fail('unbuilt construction was not refused: ' + JSON.stringify(cfg)); }
 // Fabricated non-lit: metal face + returns on the wall, open back, studs welded to the face. Nothing glows, lit or not.
@@ -103,5 +140,37 @@ if (Math.abs(fabBox.max.z - .1019 * fabInch) > .02 * fabInch) fail('fabricated f
 if (Math.abs(fab.wallDepth(fabSettings) - fabSettings.depth * fabInch) > 1e-9 || fab.wallGap(fabSettings) !== 0) fail('fabricated returns must sit on the wall');
 const fabReturns = new THREE.Box3().setFromObject(fabBuilt.parts.returns);
 if (Math.abs(fabReturns.min.z + fab.wallDepth(fabSettings)) > 1e-6) fail('fabricated returns do not reach the wall');
+// Side-lit: the returns are the lit part (the face's acrylic edges share their material; the vinyl front never glows); back,
+// studs, drain and wiring never glow; its light
+// plane sits on the wall, not in front; flush, gauges from PARTS (3/16″ acrylic returns, 0.1019″ back); every mounting builds.
+const side = signs['side-lit'], sideSt = {...settings, signtype: 'side-lit', depth: side.standardDepth};
+if (side.standardDepth !== 1 || side.depthRange.min !== .75 || side.depthRange.max !== 10) fail('side-lit depth should be the registry 1″ (0.75–10″)');
+{ const sl = side.build(art, sideSt, true, renderer); sl.root.updateMatrixWorld(true); const sInch = 4 / sideSt.width;
+  if (Object.keys(sl.parts).sort().join() !== 'back,drain,face,leds,returns,studs,wires') fail('side-lit parts: ' + Object.keys(sl.parts).sort().join());
+  if (sl.parts.face.children.length !== pieces || sl.parts.back.children.length !== pieces) fail('side-lit face/back pieces');
+  if (sl.parts.leds.children.length < meaningful || sl.parts.drain.children.length !== meaningful || sl.parts.studs.children.length < 3 * meaningful) fail('side-lit LEDs, weep holes or studs missing');
+  for (const name of ['back', 'studs', 'drain', 'wires']) sl.parts[name].traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('side-lit ' + name + ' glows'); });
+  if (!materials(sl.parts.returns.children[0]).some(glowing)) fail('side-lit returns do not glow');
+  if (materials(sl.parts.face.children[0])[0].emissiveIntensity > 0 && glowing(materials(sl.parts.face.children[0])[0])) fail('side-lit vinyl face must not glow');
+  side.build(art, sideSt, false, renderer).root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unlit side-lit still glows'); });
+  const plane = side.glow(art, sideSt, true, -side.wallDepth(sideSt), 4 * art.h / art.w); if (plane.userData.front || plane.position.z > -side.wallDepth(sideSt) + .02 || plane.material.opacity <= 0) fail('side-lit light must land on the wall');
+  if (side.wallGap(sideSt) !== 0 || Math.abs(side.wallDepth(sideSt) - (sideSt.depth + .1019) * sInch) > 1e-9) fail('side-lit: flush on the 0.1019″ back');
+  if (Math.abs(sl.parts.back.children[0].geometry.parameters.options.depth - .1019 * sInch) > 1e-9) fail('side-lit back should be 0.1019″');
+  for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = side.build(art, {...sideSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('side-lit ' + mid + ' did not build'); } }
+// Face & halo-lit: lit face and lit acrylic back; trim, returns, studs, clamps never glow; two light planes (halo on the wall, glow in
+// front); standoff gap; welded trim always present (not the trim select); every mounting builds.
+const fh = signs['face-halo-lit'], fhSt = {...settings, signtype: 'face-halo-lit', depth: fh.standardDepth, trim: 'none', gap: .5};
+if (fh.standardDepth !== 3 || fh.depthRange.min !== 2.5 || fh.depthRange.max !== 10) fail('face & halo depth should be the registry 3″ (2.5–10″)');
+{ const b = fh.build(art, fhSt, true, renderer); b.root.updateMatrixWorld(true); const fInch = 4 / fhSt.width;
+  if (Object.keys(b.parts).sort().join() !== 'acrylic,clamps,drain,face,leds,returns,studs,trim,wires') fail('face & halo parts: ' + Object.keys(b.parts).sort().join());
+  if (!b.parts.trim.children.length) fail('face & halo: the welded trim is always there (trim select does not apply)');
+  if (!materials(b.parts.face.children[0]).some(glowing) || !materials(b.parts.acrylic.children[0]).some(glowing)) fail('face & halo: face and acrylic back must glow');
+  for (const name of ['trim', 'returns', 'studs', 'clamps', 'drain', 'wires']) b.parts[name].traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('face & halo ' + name + ' glows'); });
+  if (b.parts.clamps.children.length < 3 * meaningful || b.parts.studs.children.length < 3 * meaningful) fail('face & halo: standoff studs and clamps');
+  fh.build(art, fhSt, false, renderer).root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unlit face & halo still glows'); });
+  const planes = [].concat(fh.glow(art, fhSt, true, -fh.wallDepth(fhSt) - fh.wallGap(fhSt), 4 * art.h / art.w));
+  if (planes.length !== 2 || planes.filter(p => p.userData.front).length !== 1 || planes.some(p => p.material.opacity <= 0)) fail('face & halo: one halo on the wall + one glow in front');
+  if (Math.abs(fh.wallGap(fhSt) - .5 * fInch) > 1e-9 || Math.abs(fh.wallDepth(fhSt) - (fhSt.depth + .1875) * fInch) > 1e-9) fail('face & halo: wall behind the 3/16″ back across the gap');
+  for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = fh.build(art, {...fhSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('face & halo ' + mid + ' did not build'); } }
 if (waiting.length) console.log('VARIANTS_WAITING_FOR_REGISTRY', waiting.length, 'rows still "todo":', waiting.join(', '));
 console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));
