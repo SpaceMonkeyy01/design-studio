@@ -113,7 +113,7 @@ flowchart LR
 
 1. **Scene view (own compositing) + QC.** Decided 2026-10-23: we place the sign in scene photos ourselves (scene view), so the sign is our geometry by construction; Gemini was 83% painted / 78% metallic on "sign unchanged?". Next: judge scene renders against the old Gemini ones in Airtable; light the sign from the photo (env map from the photo, so mirror finishes reflect the scene); optional Gemini "blend" pass that may only retouch the surroundings.
 2. **Performance + cleanup.** Done: render on demand, shadow map only on scene changes (idle 0 draws, orbit ~4.5 ms/frame on HD 530). Kept by decision (2026-10-22): the 1.75 preview pixel ratio floor on 1× screens and the 4096 shadow map. See `docs/handover/OPTIMIZATION.md`.
-3. **Channel-letter mountings beyond flush**: the three flat backers are built (2026-10-23; outline, margin and colour assumed). Raceway 2″ and backboard cabinet 2″ wait on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
+3. **Channel-letter mountings beyond flush**: the three flat backers and the 2″ raceway are built (2026-10-23; outline, size and colour assumed). The backboard cabinet 2″ waits on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
 5. Smaller: exploded view clutter at ¾ angle (worse with deep face-lit cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 
