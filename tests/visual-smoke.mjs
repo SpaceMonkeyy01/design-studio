@@ -105,6 +105,28 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   await page.click('#face-lit .sheet button >> nth=0'); const dialogOpen = await page.waitForSelector('#viewer[open]').then(() => true, () => false);
   await page.waitForTimeout(500); await page.screenshot({ path: path.join(out, 'reference', 'viewer.png') });
   results.push({ step: 'reference library', ok: studioHref === 'reference.html#halo-lit' && boardHref === 'reference.html' && lib.drawings === 109 && !lib.bad.length && lib.target === 'face-lit' && lib.untitled === 0 && dialogOpen, studioHref, boardHref, ...lib, dialogOpen }); }
+// Scene view (core/placement.mjs): the sign on a preset photo, camera solved from its corners. Screenshots in
+// test-output/scene/ (not compared). Checks: canvas takes the photo's shape, dragging a corner moves the camera, view buttons
+// leave the scene and "In scene" returns, the scene PNG is the photo's size, every sign type renders, save → load keeps it.
+{ fs.mkdirSync(path.join(out, 'scene'), { recursive: true }); const shot = name => page.waitForTimeout(800).then(async () => page.screenshot({ path: path.join(out, 'scene', name + '.png'), clip: await stage.boundingBox() }));
+  await page.goto(url + 'studio.html'); await page.waitForFunction(() => /Halo-lit/.test(document.getElementById('status').textContent));
+  const look = () => page.evaluate(() => { const v = document.getElementById('viewer'); return { aspect: +(v.clientWidth / v.clientHeight).toFixed(2), inScene: document.getElementById('sceneview').classList.contains('active'), info: document.getElementById('lensinfo').textContent, cornersShown: !document.getElementById('corners').hasAttribute('hidden'), active: [...document.querySelectorAll('.viewmodes .active')].map(b => b.textContent).join(), status: document.getElementById('status').textContent }; });
+  await click('[data-scenebtn="scenes/storefront.jpg"]'); await page.waitForFunction(() => /3″ depth/.test(document.getElementById('status').textContent)); await page.waitForTimeout(800); const entered = await look(); await shot('01-storefront-corners');
+  const handle = await page.locator('#corners circle[data-corner="1"]').boundingBox(), before = await page.evaluate(() => document.querySelector('#corners polygon').getAttribute('points'));
+  await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down(); await page.mouse.move(handle.x + 30, handle.y + 60, { steps: 4 }); await page.mouse.up();
+  const after = await page.evaluate(() => document.querySelector('#corners polygon').getAttribute('points')); await shot('02-storefront-dragged');
+  await choose('scene', 'scenes/storefront.jpg'); await page.evaluate(() => { const e = document.getElementById('showcorners'); e.checked = false; e.dispatchEvent(new Event('change')); }); await shot('03-storefront-halo-lit');
+  t = Date.now(); const download = page.waitForEvent('download'); await click('#export'); const d = await download, file = path.join(out, 'scene', d.suggestedFilename()); await d.saveAs(file);
+  const png = await page.evaluate(async src => { const im = new Image(); im.src = src; await im.decode(); return { w: im.width, h: im.height }; }, 'data:image/png;base64,' + fs.readFileSync(file).toString('base64')); const exportMs = Date.now() - t;
+  await click('[data-view=front]'); const left = await look(); await click('#sceneview'); const back = await look();
+  await click('#unlit'); await shot('04-storefront-unlit'); await click('#lit');
+  await choose('signtype', 'face-lit'); await page.waitForFunction(() => /^Face-lit/.test(document.getElementById('status').textContent)); const faceLit = await look(); await shot('05-storefront-face-lit');
+  await choose('signtype', 'fabricated-nonlit'); await page.waitForFunction(() => /^Fabricated/.test(document.getElementById('status').textContent)); await choose('finish', 'gold-brushed'); await shot('06-storefront-fabricated-gold');
+  await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); await click('[data-scenebtn="scenes/studio-panel.jpg"]'); await page.waitForTimeout(1000); const panel = await look(); await shot('07-panel-halo-lit');
+  const saved = page.waitForEvent('download'); await click('#saveproject'); const project = path.join(out, 'scene', 'project.json'); await (await saved).saveAs(project);
+  await choose('scene', ''); const cleared = await look(); await page.setInputFiles('#loadproject', project); await page.waitForFunction(() => document.getElementById('sceneview').classList.contains('active'));
+  const restored = await look(), savedScene = JSON.parse(fs.readFileSync(project, 'utf8')).scene;
+  results.push({ step: 'scene view', ms: exportMs, ok: entered.inScene && entered.aspect === 1.5 && entered.active === 'Outdoor' && /3″ depth/.test(entered.status) && panel.active === 'Indoor' && left.active === 'Assembled' && entered.cornersShown && /^Rectangle 96″/.test(entered.info) && before !== after && png.w === 1024 && png.h === 683 && !left.inScene && left.aspect !== 1.5 && back.inScene && faceLit.inScene && panel.aspect === 1 && savedScene?.src === 'scenes/studio-panel.jpg' && !cleared.inScene && restored.inScene && restored.aspect === 1 && restored.info === panel.info, entered, dragMoved: before !== after, png, left, back, panel, restored }); }
 console.log(JSON.stringify({ gpu, results, budget_ms: 5000, over_budget: results.filter(r => r.ms > 5000 && r.step !== 'cutout layers').map(r => r.step), console: logs }, null, 2));
 await browser.close(); server.close();
 process.exitCode = results.every(r => r.ok !== false) ? 0 : 1;

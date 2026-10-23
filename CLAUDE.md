@@ -1,6 +1,6 @@
 # Design Studio — notes for Claude Code
 
-Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D sign → orbit, exploded/inside views, finishes, lighting, 4K PNG, transparent cutout for compositing.
+Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D sign → orbit, exploded/inside views, finishes, lighting, 4K PNG, transparent cutout for compositing, and the sign placed in perspective on a scene photo (scene view).
 No backend, no API keys, no build step. Plain ES modules + vendored Three.js r186 + Clipper 6.4.2.
 
 Origin: Halo Studio, built in ChatGPT by a teammate and handed over on 2026-10-19 (`docs/handover/`). Everything after the original history was made by us.
@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated).
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated). Subfolders (`cutout/`, `scene/`, `reference/`) are checked by assertions, not compared.
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 
@@ -32,6 +32,7 @@ app/
   index.html       landing page: build board from registry.mjs; "Open Design Studio" → studio.html, built variants → studio.html?type=<id>
   studio.html, style.css   the 3D studio ("← Build board" and the logo go back); studio.html?type=<registry id> opens that variant
   reference.html   construction reference library: every Estimator Side Views cross-section by construction, with PARTS specs and the registry rows sold with it; the studio's "Reference library ↗" opens it at reference.html#<sign id>
+  scenes/          preset scene photos (empty storefront fascia, studio panel) for scene view; corners per photo are `SCENES` in app.js
   references/      the cross-section PNGs (provided, unedited: replace a file, never redraw it) + library.mjs, the manifest (sign, mounting, thickness, source path)
   registry.mjs     every sign type x variant the studio sells, MOUNTING_SETS per construction, PARTS measured off the cross-sections (generated data: do not edit, report problems)
   app.js           UI + app state: controls, upload/processArt, modes, inspector, refresh*, capture, save/load
@@ -46,6 +47,7 @@ app/
     mounting.mjs   which mountings of each construction are built (sets come from MOUNTING_SETS in registry.mjs; only channel-letter flush draws geometry)
     hardware.mjs   part groups, LED modules + routed wiring, threaded studs, drain markers
     export.mjs     4K PNG, cutout layers (difference matte), download, contact sheet, project JSON
+    placement.mjs  scene view: camera solved from 4 clicked corners of a flat rectangle in a photo (pure maths, no THREE)
   signs/
     channel-letter/  build.mjs (CONFIGS switches, buildChannelLetter, light planes, `signs` interface) + CLAUDE.md
                      halo-lit and face-lit are configs of this one build
@@ -77,6 +79,7 @@ flowchart LR
 - Rendering is on demand: `animate()` draws only when the camera moves or after `requestRender()`. Any input/change/click/keydown/wheel/pointerdown event and every scene function (`build`, `setMode`, `refresh*`, `view`, …) already request a frame; code that changes the scene some other way (a timer, an async load) must call `requestRender()` itself. The shadow map is redrawn only on `requestRender()` (the key light is fixed), never for a camera move.
 - `state()` reads the DOM. `update()` decides: geometry change → `build()`. Finish → `refreshSurfaces()`. LED/wall → `refreshWall()`. Lit/intensity → `refreshLighting()`.
 - The halo is a blurred copy of the mask on an additive plane, not simulated light. Acrylic glow is emissive. Face-lit faces are emissive too, from a baked texture (artwork colour × LED falloff), plus a face glow plane in front of them.
+- Scene view: the photo is `scene.background`; `cameraFromCorners()` (homography → focal length from the rectangle's right angle, else a 60° fallback → pose) puts the camera where the photo was taken, with the rectangle on the sign's wall plane. The canvas is letterboxed to the photo, OrbitControls are skipped (`updateOrbit()`), the studio wall is swapped for a shadow-only plane (`createShadowCatcher`) and the halo lands on the photo. `prepareFrame()` sets wall/halo/catcher visibility for every draw. The stage's Outdoor / Indoor buttons (next to Assembled / Exploded / Inside) open the two preset photos. A new scene raises the depth to a custom 3″ (`sceneDepth()`, never lowers it; studio standards unchanged). Any view, mode or inspector button leaves scene view; "▣ In scene" or the scene's button returns. The scene PNG is exported at the photo's resolution (so the sign is no sharper than the photo).
 - Mirror finishes reflect `mirrorEnvironment()` (HDR softbox room, set as `envMap`); brushed, paint and the wall use `scene.environment` from `createEnvironment()`.
 - A "letter" is a raster connected component, not a semantic glyph.
 
@@ -108,13 +111,13 @@ flowchart LR
 
 ## Backlog (ordered)
 
-1. **Prototype Gemini compositing + QC.** Send the cutout + scene photo to a Gemini app; score "sign unchanged?" in Airtable (human QA is the scoreboard). Compare against the old numbers: Flash 83% painted, 78% metallic.
+1. **Scene view (own compositing) + QC.** Decided 2026-10-23: we place the sign in scene photos ourselves (scene view), so the sign is our geometry by construction; Gemini was 83% painted / 78% metallic on "sign unchanged?". Next: judge scene renders against the old Gemini ones in Airtable; light the sign from the photo (env map from the photo, so mirror finishes reflect the scene); optional Gemini "blend" pass that may only retouch the surroundings.
 2. **Performance + cleanup.** Done: render on demand, shadow map only on scene changes (idle 0 draws, orbit ~4.5 ms/frame on HD 530). Kept by decision (2026-10-22): the 1.75 preview pixel ratio floor on 1× screens and the 4096 shadow map. See `docs/handover/OPTIMIZATION.md`.
 3. **Channel-letter mountings beyond flush** (raceway 2″, three flat backers, backboard cabinet), declared per construction in `MOUNTING_SETS`. Waiting on inches from the shop; see `signs/channel-letter/CLAUDE.md`.
 4. **More sign types**, one at a time (see above). Candidates from the handover: front + halo combo, non-illuminated, flat-cut, edge-lit acrylic, faux neon, cabinet, blade.
 5. Smaller: exploded view clutter at ¾ angle (worse with deep face-lit cans); `exitFocus()` loses a white wall; SVG is rasterised so vector curves are lost; bronze mirror leans peach in front view (base colour `#b98460`); cutout export has no wall-shadow layer and takes 4–7 s (three 4K renders).
 
-Wall photo is a flat texture with no perspective. That is a product decision: perspective compositing into real scenes is done on the Gemini side.
+The wall photo (Background wall) is still a flat texture with no perspective. Perspective placement into real scenes is scene view (section 04), not the wall photo.
 
 ## Working rules
 
