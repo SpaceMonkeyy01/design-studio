@@ -4,7 +4,8 @@ import {clippedReturnRings,offsetRegions} from '../../core/artwork.mjs?v=11';
 import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=13';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
-import {glowPlane} from '../../core/glow.mjs?v=1';
+import {glowPlane} from '../../core/glow.mjs?v=2';
+import {acrylicFaceMaterial,faceGlowPlane} from '../../core/litface.mjs?v=1';
 import {builtMounting} from '../../core/mounting.mjs?v=5';
 import {SIGNS as REGISTRY,PARTS} from '../../registry.mjs?v=2';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=3';
@@ -34,15 +35,11 @@ function construction(cfg){const id=BUILT.get(key(cfg));if(!id)throw new Error('
 // Inches. ASSUMED values are listed in CLAUDE.md: trim thickness and lip. ACRYLIC/BACK/RETURN are only fallbacks for a part
 // whose cross-section gives no thickness (METAL_FACE: halo-lit's face); measured gauges come from PARTS (see gauges()).
 const ACRYLIC=.1875,BACK=.063,RETURN=.04,METAL_FACE=.045,TRIM=.06,TRIM_BAND=1,LIP=.125,LED_PITCH=4;
-// Lit acrylic face: emissive per unit of intensity (tuned on screenshots: face brighter than the wall, hue not washed to white).
-const FACE_GLOW=2.4;
 // Side-lit: lit acrylic returns, emissive per unit of intensity; and the light they throw on the wall around each letter (blur
 // sigmas in inches, strength). Tuned on screenshots.
 const SIDE_GLOW=3,SPILL_CORE=.35,SPILL_WIDE=1.4,SPILL=1.5;
 // Face & side-lit opens at 50% intensity (for its lit face), so its returns and spill are 1.5× side-lit's (which opens at 75%).
 const FACE_SIDE=1.5;
-// Face glow plane in front of a lit face: blur sigmas (inches) and strength.
-const GLOW_CORE=.35,GLOW_WIDE=1.4,GLOW=.8;
 const TRIM_FINISH={black:'black',white:'white',artwork:'artwork',silver:'silver-brushed',gold:'gold-brushed',bronze:'bronze-brushed'};
 // Mounting parts between the letters and the wall (MOUNTING_SETS). depth = how far it stands off the wall (inches); the letters
 // keep their place and the wall moves back by it. From the shop: backer thicknesses (4 mm ACM, 8 mm acrylic, 2.5 mm aluminium) and
@@ -54,25 +51,6 @@ const MOUNTS={'backer-acm-4':{kind:'backer',material:'ACM',depth:4/25.4},'backer
 const RACEWAY_INSET=2;
 export const mountOf=s=>MOUNTS[s.mounting]||null;const mountDepth=s=>mountOf(s)?.depth||0;
 
-// The colour a lit acrylic face shows, painted in mask pixels: vinyl artwork, one tint per letter, or white for an all-black logo.
-// Near-black artwork stays dark; an all-black logo lights white instead (black by day, white at night).
-function faceColour(art,s){const dark=c=>!c?.colour?.isColor||.2126*c.colour.r+.7152*c.colour.g+.0722*c.colour.b<.012,allDark=art.colors.every(dark);
- const hex=i=>{const c=art.colors[i]?.colour;return c?.isColor?'#'+c.getHexString(THREE.SRGBColorSpace):'#a6a6a6';};
- const tint=x=>art.loops.forEach((l,i)=>{x.fillStyle=hex(i);x.beginPath();for(const loop of [l.points,...l.holes]){loop.forEach((p,k)=>k?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath();}x.fill('evenodd');});
- const paint=x=>{if(allDark){x.fillStyle='#ffffff';x.fillRect(0,0,art.w,art.h);}else if(s.facetype==='tinted')tint(x);else x.drawImage(art.texture.image,0,0,art.w,art.h);};
- return {tint,paint};}
-// Lit acrylic face material: the face colour shines through, brighter over each LED module.
-function acrylicFaceMaterial(art,s,isLit,modules){const w=art.w,h=art.h,{tint,paint}=faceColour(art,s),pitch=w*LED_PITCH/s.width;
- const texture=draw=>{const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;};
- // Black outside the letters, so face edges sampling past the outline darken slightly instead of picking up the falloff grey.
- const glow=texture(x=>{x.fillStyle='#000000';x.fillRect(0,0,w,h);paint(x);
-  // LED falloff, sRGB: 196 between modules (≈55% linear) up to 255 over each module.
-  const f=document.createElement('canvas');f.width=w;f.height=h;const fx=f.getContext('2d');fx.fillStyle='rgb(196,196,196)';fx.fillRect(0,0,w,h);fx.globalCompositeOperation='lighter';for(const p of modules){const g=fx.createRadialGradient(p[0],p[1],0,p[0],p[1],pitch*.8);g.addColorStop(0,'rgba(59,59,59,1)');g.addColorStop(1,'rgba(59,59,59,0)');fx.fillStyle=g;fx.fillRect(p[0]-pitch,p[1]-pitch,pitch*2,pitch*2);}
-  x.globalCompositeOperation='multiply';x.drawImage(f,0,0);});
- // When lit, the face reflects little room light (25%) so the glow carries the colour instead of washing it out.
- const litColour=new THREE.Color(.25,.25,.25),unlitColour=new THREE.Color(1,1,1);
- const mat=new THREE.MeshPhysicalMaterial({color:isLit?litColour:unlitColour,map:s.facetype==='tinted'?texture(tint):art.texture,roughness:.32,metalness:0,clearcoat:.5,clearcoatRoughness:.18,emissive:ledColour(s),emissiveMap:glow,emissiveIntensity:isLit?s.intensity*FACE_GLOW:0});
- Object.assign(mat.userData,{glowFactor:FACE_GLOW,litColour,unlitColour});return mat;}
 
 // Builds one sign for a traced artwork, settings snapshot and construction config. Returns {root, parts}, one group per part.
 // Pieces are created in each construction's original order: material ids decide the draw order of coplanar surfaces,
@@ -162,7 +140,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
   returnsShell(-depth,-acrylicT,index=>artworkMaterial(returnBase,index,false,s.returns,art.colors),(index,c)=>{if(!trimBase)return;const tm=artworkMaterial(trimBase,index,false,trimFinish,art.colors);for(const r of offsetRegions(c,trimT,C)){const rc=[r.points,...r.holes];slab(clippedReturnRings(rc,trimT,C),-band,0,tm,'trim',index);slab(clippedReturnRings(rc,trimT+lip,C),0,trimT,tm,'trim',index);}});
   // Acrylic face in front, sealed back behind; both cut to the letter outline. Face edges take the returns' paint:
   // sampling the artwork at the exact outline gives a ragged rim when trimless.
-  const faceMat=acrylicFaceMaterial(art,s,isLit,modules),backMat=new THREE.MeshStandardMaterial({color:'#8b9196',metalness:.6,roughness:.5});
+  const faceMat=acrylicFaceMaterial(art,s,isLit,modules,LED_PITCH),backMat=new THREE.MeshStandardMaterial({color:'#8b9196',metalness:.6,roughness:.5});
   shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:false})),[faceMat,artworkMaterial(returnBase,index,false,s.returns,art.colors)]);face.position.z=-acrylicT;addPart('face',face);const back=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:backT,bevelEnabled:false}),backMat);back.position.z=wallZ;addPart('back',back);});}
 
  // Side-lit: the face-lit can with the light moved to the returns. Acrylic face under opaque vinyl (the artwork colours, never lit),
@@ -179,7 +157,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
   const returnMat=new THREE.MeshPhysicalMaterial({color:isLit?litColour:unlitColour,emissive:ledColour(s),emissiveIntensity:isLit?s.intensity*glowFactor:0,roughness:.55,metalness:0,clearcoat:.4,clearcoatRoughness:.2});Object.assign(returnMat.userData,{glowFactor,litColour,unlitColour});
   returnsShell(-depth,-acrylicT,()=>returnMat);
   // Vinyl face in the artwork colours (solid letters take their own colour, patterned ones keep the artwork), and the sealed back.
-  const vinyl=litFace?null:finishMaterial({...s,finish:'artwork',sheen:'satin'},art.texture,renderer),faceMat=litFace?acrylicFaceMaterial(art,s,isLit,modules):null,backMat=new THREE.MeshStandardMaterial({color:'#8b9196',metalness:.6,roughness:.5});
+  const vinyl=litFace?null:finishMaterial({...s,finish:'artwork',sheen:'satin'},art.texture,renderer),faceMat=litFace?acrylicFaceMaterial(art,s,isLit,modules,LED_PITCH):null,backMat=new THREE.MeshStandardMaterial({color:'#8b9196',metalness:.6,roughness:.5});
   shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:false})),[litFace?faceMat:artworkMaterial(vinyl,index,true,'artwork',art.colors),returnMat]);face.position.z=-acrylicT;face.userData.artIndex=index;addPart('face',face);const back=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:backT,bevelEnabled:false}),backMat);back.position.z=wallZ;addPart('back',back);});}
 
  // Face & halo-lit: face-lit's front (lit acrylic face in a welded trim cap the colour of the returns) on halo-lit's back (acrylic
@@ -192,7 +170,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
    drain:()=>-depth+.25*inch});
   const returnBase=finishMaterial({...s,finish:s.returns,sheen:'satin'},art.texture,renderer);
   returnsShell(-depth,-acrylicT,index=>artworkMaterial(returnBase,index,false,s.returns,art.colors),(index,c)=>{const tm=artworkMaterial(returnBase,index,false,s.returns,art.colors);for(const r of offsetRegions(c,trimT,C)){const rc=[r.points,...r.holes];slab(clippedReturnRings(rc,trimT,C),-band,0,tm,'trim',index);slab(clippedReturnRings(rc,trimT+lip,C),0,trimT,tm,'trim',index);}});
-  const faceMat=acrylicFaceMaterial(art,s,isLit,modules);
+  const faceMat=acrylicFaceMaterial(art,s,isLit,modules,LED_PITCH);
   shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:false})),[faceMat,artworkMaterial(returnBase,index,false,s.returns,art.colors)]);face.position.z=-acrylicT;addPart('face',face);});
   acrylicBack();}
 
@@ -213,8 +191,7 @@ export const faceHaloGlow=(art,s,isLit,wallZ,height)=>[haloGlow(art,s,isLit,wall
 export const faceSideGlow=(art,s,isLit,wallZ,height)=>[sideGlow(art,s,isLit,wallZ,height,SPILL*FACE_SIDE),faceGlow(art,s,isLit,wallZ,height)];
 // emit front: face glow = the lit face colours, blurred, on an additive plane just in front of the face. It reads as light
 // spilling past the trim, like bloom in a photo of a lit sign. Front only: nothing is added behind the letters.
-export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
- return glowPlane(c,height,{core:GLOW_CORE*inch,wide:GLOW_WIDE*inch,opacity:isLit?s.intensity*GLOW:0,opacityFactor:GLOW,z:(TRIM+.05)*inch,front:true});}
+export const faceGlow=(art,s,isLit,wallZ,height)=>faceGlowPlane(art,s,isLit,height,(TRIM+.05)*(4/s.width));
 
 // Registry ids (app/registry.mjs) this construction builds → the sign to open and, per studio tier, the trims offered.
 // Face-lit Standard = plastic trim cap; Premium = metallic trim or trimless (pricing names: "Plastic Trim" / "Metallic Trim").
