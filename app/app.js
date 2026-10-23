@@ -7,7 +7,7 @@ import {createRenderer,setupScene,fitObject,createWall,wallBackdrop,createShadow
 import {download,imagePNG,mattePNG,glowPNG,contactSheet,projectJSON} from './core/export.mjs?v=13';
 import {cameraFromCorners} from './core/placement.mjs?v=1';
 import {mountingsFor} from './core/mounting.mjs?v=5';
-import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=12';
+import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=13';
 import {SIGNS as REGISTRY} from './registry.mjs?v=2';
 // Sign types by id (the Sign type control). app.js only talks to a type through this interface (see signs/*/build.mjs).
 // VARIANTS: registry id → {sign, options}, from each construction.

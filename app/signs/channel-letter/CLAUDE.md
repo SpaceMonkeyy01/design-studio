@@ -25,6 +25,7 @@ Built today:
 
 | Construction | face | returns | back | emit | Light plane |
 |---|---|---|---|---|---|
+| side-lit | acrylic + vinyl | translucent | opaque | side | spill on the wall (`sideGlow`) |
 | halo-lit | opaque | opaque | acrylic | back | halo on the wall (`haloGlow`) |
 | face-lit | acrylic | opaque | opaque | front | face glow in front of the face (`faceGlow`) |
 | fabricated-nonlit | opaque | opaque | none | — | none (`lit: false`) |
@@ -115,6 +116,17 @@ Forbidden looks (from Gemini QC; most became impossible in a deterministic build
 - Any glow behind the letters, or a colour cast on the wall, raceway or backer.
 - Glowing returns or trim. Hardware from an unselected mounting appearing (a backer or raceway strip under flush).
 - Complaints were about dim faces far more than colour (≈5:1): err bright.
+
+## Side-lit — `face: acrylic + vinyl, returns: translucent, back: opaque, emit: [side]`
+
+From the Estimator cross-section (`references/channel-letter/side-lit/flush.png`, `PARTS['side-lit']`). The face-lit can with the light moved from the face to the returns.
+
+- **Face**: 3/16″ acrylic under opaque vinyl in the artwork colours (`finishMaterial` "artwork": solid letters take their colour, patterned ones the texture). The same acrylic part as face-lit (PARTS gives the vinyl face no thickness, so face-lit's 3/16″ is used). Never lit. Its acrylic edges share the returns' material.
+- **Returns**: 3/16″ acrylic (PARTS), frosted white by day. Lit: emissive in the LED colour × intensity × 3 (`SIDE_GLOW`), diffuse dropped to 25% so the LED colour carries them (face-lit's trick; full diffuse washed red LEDs to pink-white).
+- **Wall spill** (`sideGlow`): the mask blurred (core σ 0.35″, wide 1.4″) in the LED colour on an additive plane just in front of the wall (or the backer / cabinet front), strength 1.5 × intensity. Only the part outside the letters shows. Tuned on screenshots 20–22.
+- **LEDs, back, studs, weep holes**: as face-lit (front-facing modules ~4″ apart on the 0.1019″ sealed back, flush studs). No trim. Every mounting works.
+- **Defaults**: 1″ depth (0.75–10″, registry), 75% intensity, 6500K.
+- **Registry**: the two Side-Lit rows are in `VARIANTS` but still `todo` in `registry.mjs` (generated data), so `?type=` refuses them until the source marks them done. Side-lit is open from the Sign type control.
 
 ## Fabricated non-lit — `back: none, emit: []`
 
