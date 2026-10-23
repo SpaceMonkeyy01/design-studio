@@ -5,7 +5,7 @@ import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=13';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
 import {glowPlane} from '../../core/glow.mjs?v=1';
-import {builtMounting} from '../../core/mounting.mjs?v=4';
+import {builtMounting} from '../../core/mounting.mjs?v=5';
 import {SIGNS as REGISTRY,PARTS} from '../../registry.mjs?v=2';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=3';
 // Channel letters: a traced can (face + returns + back). One parametric build for every channel-letter variant;
@@ -36,11 +36,11 @@ const GLOW_CORE=.35,GLOW_WIDE=1.4,GLOW=.8;
 const TRIM_FINISH={black:'black',white:'white',artwork:'artwork',silver:'silver-brushed',gold:'gold-brushed',bronze:'bronze-brushed'};
 // Mounting parts between the letters and the wall (MOUNTING_SETS). depth = how far it stands off the wall (inches); the letters
 // keep their place and the wall moves back by it. From the shop: backer thicknesses (4 mm ACM, 8 mm acrylic, 2.5 mm aluminium) and
-// the raceway's 2″ depth and 0.1019″ aluminium. ASSUMED until the shop confirms (editable, see CLAUDE.md): backer = rectangle around
-// the artwork with a 3″ margin (s.backermargin), square corners; raceway = one box centred on the artwork, 5″ tall (s.racewayheight),
+// the raceway's and backboard cabinet's 2″ depth (0.1019″ / 0.079″ aluminium). ASSUMED until the shop confirms (editable, see CLAUDE.md):
+// backer and cabinet = rectangle around the artwork with a 3″ margin (s.backermargin), square corners; raceway = one box centred on the artwork, 5″ tall (s.racewayheight),
 // 2″ shorter than the sign at each end, no top lip; colour s.backercolour (white, black, silver; clear for an acrylic backer only).
 const MOUNTS={'backer-acm-4':{kind:'backer',material:'ACM',depth:4/25.4},'backer-acrylic-8':{kind:'backer',material:'acrylic',depth:8/25.4},'backer-aluminum-25':{kind:'backer',material:'aluminium',depth:2.5/25.4},
- 'raceway-2':{kind:'raceway',material:'aluminium',depth:2}};
+ 'raceway-2':{kind:'raceway',material:'aluminium',depth:2},'backboard-cabinet-2':{kind:'cabinet',material:'aluminium',depth:2}};
 const RACEWAY_INSET=2;
 export const mountOf=s=>MOUNTS[s.mounting]||null;const mountDepth=s=>mountOf(s)?.depth||0;
 
@@ -94,8 +94,9 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
  // Colour of a backer or raceway. Not a finish part: it keeps its own colour. Clear only for an acrylic backer (others draw white).
  function mountMaterial(){const colour=s.backercolour==='clear'&&mountPart.material!=='acrylic'?'white':s.backercolour||'white';
   return colour==='silver'?finishMaterial({...s,finish:'silver-brushed'},art.texture,renderer):colour==='clear'?new THREE.MeshPhysicalMaterial({color:'#e4f0f3',transparent:true,opacity:.3,roughness:.06,metalness:0,clearcoat:1,clearcoatRoughness:.05,depthWrite:false}):new THREE.MeshStandardMaterial({color:colour==='black'?'#1b1d1e':'#efeee9',roughness:mountPart.material==='acrylic'?.15:.5,metalness:0});}
- // Flat backer: one rectangle around the artwork plus the margin, from its front (z) back to the wall.
- function backerPanel(front){const m=Math.max(0,s.backermargin??3)*inch,panel=new THREE.Mesh(new THREE.BoxGeometry(4+2*m,4*art.h/art.w+2*m,backerT),mountMaterial());panel.position.z=front-backerT/2;addPart('backer',panel);}
+ // Flat backer or backboard cabinet: one rectangle around the artwork plus the margin, from its front (z) back to the wall. The
+ // cabinet is drawn closed (its power supply inside is not drawn).
+ function backerPanel(front){const m=Math.max(0,s.backermargin??3)*inch,panel=new THREE.Mesh(new THREE.BoxGeometry(4+2*m,4*art.h/art.w+2*m,backerT),mountMaterial());panel.position.z=front-backerT/2;addPart(mountPart.kind,panel);}
  // Raceway: a box on the wall, centred on the artwork, the sign's width less RACEWAY_INSET at each end; the letters are bolted to its
  // front, the power supply sits inside (not drawn). Drawn closed; the drawings' top lip is left out. The letters hang on the raceway
  // only: stud mounts outside its band are dropped (a letter wholly above or below it gets none: a real job would add a raceway).
@@ -156,7 +157,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
 
 // Light planes (core/glow.mjs), chosen by `emit`.
 // emit back: halo = the mask blurred (core σ 0.4″ + gap, wide σ 1″ + 2.5 × gap) in the LED colour, just in front of the wall.
-export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+(mountOf(s)?.kind==='backer'?mountDepth(s)*inch:0)+.008});} // on a backer's front; a raceway leaves it on the wall, partly hidden
+export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+(mountOf(s)&&mountOf(s).kind!=='raceway'?mountDepth(s)*inch:0)+.008});} // on a backer's or cabinet's front; a raceway leaves it on the wall, partly hidden
 // emit front: face glow = the lit face colours, blurred, on an additive plane just in front of the face. It reads as light
 // spilling past the trim, like bloom in a photo of a lit sign. Front only: nothing is added behind the letters.
 export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
@@ -188,9 +189,10 @@ const depthOf=id=>{const {min,max,std}=REGISTRY.find(r=>VARIANTS[r.id]?.sign===i
 // Inspector text for one PARTS entry: '0.0630″ aluminum'. Call-outs use ", the studio shows ″.
 const spec=part=>((part.thickness?part.thickness+' ':'')+part.material).replace(/"/g,'″'),FACE_LIT=PARTS['face-lit'],FABRICATED=PARTS['fabricated-nonlit'];
 // Mountings every channel-letter sign offers, and the mounting part's explorer button, inspector text and exploded offset.
-const MOUNTINGS=['flush','raceway-2','backer-acm-4','backer-acrylic-8','backer-aluminum-25'];
-const withMount=(s,list)=>{const m=mountOf(s);return m?[...list,[m.kind,'#d8d6cc',m.kind==='raceway'?'2″ raceway':m.material+' backer']]:list;},exploded=(s,offsets)=>mountOf(s)?{...offsets,[mountOf(s).kind]:-1.05}:offsets;
+const MOUNTINGS=['flush','raceway-2','backer-acm-4','backer-acrylic-8','backer-aluminum-25','backboard-cabinet-2'];
+const withMount=(s,list)=>{const m=mountOf(s);return m?[...list,[m.kind,'#d8d6cc',m.kind==='raceway'?'2″ raceway':m.kind==='cabinet'?'2″ backboard cabinet':m.material+' backer']]:list;},exploded=(s,offsets)=>mountOf(s)?{...offsets,[mountOf(s).kind]:-1.05}:offsets;
 const RACEWAY_INFO=['Raceway','2″ deep 0.1019″ aluminium box on the wall; the letters are bolted to its front and the power supply sits inside it. Height (5″), length (2″ in from each end of the sign), one centred raceway and colour are assumed until the shop confirms them; the top lip on the drawings is not drawn.'];
+const CABINET_INFO=['Backboard cabinet','2″ deep 0.079″ aluminium box on the wall behind the letters; the letters are stud-mounted to its front and the power supply sits inside it. Rectangle with a 3″ margin, square corners and colour are assumed until the shop confirms them.'];
 const BACKER_INFO=['Backer panel','Flat panel on the wall behind the letters: 4 mm ACM, 8 mm acrylic or 2.5 mm aluminium, as chosen. The letters are stud-mounted through it; the power supply stays behind the wall. Rectangle with a 3″ margin, square corners and colour are assumed until the shop confirms them.'];
 // Sign-type interface read by app.js, one per built construction (the studio's Sign type control).
 export const signs={
@@ -207,7 +209,7 @@ export const signs={
    studs:['Stud + rivnut','Hollow rear spacer with a threaded mounting stud through its bore, plus the rivnut connection. 3–4 uniformly spread mounts per letter; hardware is visually fitted to stroke width. Fabrication dimensions require confirmation.'],
    clamps:['L brackets + screws','At least three small L brackets per letter. Each bracket has two screws: one through the metal return and one through the acrylic back. Positions and sizes are illustrative.'],
    wires:['18 AWG wiring','Illustrative red / white wiring between LED modules inside the letters.'],
-   drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.'],backer:BACKER_INFO,raceway:RACEWAY_INFO},
+   drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.'],backer:BACKER_INFO,raceway:RACEWAY_INFO,cabinet:CABINET_INFO},
   parts:s=>withMount(s,[['face','#ad9270','Metal face'],['returns','#8d959e','Metal returns'],['leds','#f5d791','LED modules'],['acrylic','#a8d7e6','3/16″ acrylic back'],['studs','#747c88','Spacers + threaded studs'],['clamps','#9aa4aa','L brackets + screws'],['wires','#bd655c','18 AWG wiring'],['drain','#272b31','Drain position']]),
   finishParts:['face','returns'],internalHidden:['face'],assembledHidden:['clamps'],singleParts:['leds','studs','drain','clamps'],
   hints:{assembled:'Opaque metal face and returns. Light exits through the acrylic back and reflects from the wall.',exploded:'Separated layers reveal your metal shell, rear-facing LEDs, acrylic back and wall mounting.',internal:'Face removed to inspect the LEDs and wiring. The LEDs point towards the acrylic back.'},
@@ -226,7 +228,7 @@ export const signs={
    wires:['18 AWG wiring','Illustrative red / white wiring between LED modules inside the letters.'],
    back:['Sealed back','Solid '+spec(FACE_LIT.back)+' back. With the returns it forms a sealed can: no light reaches the wall.'],
    studs:['Threaded studs','3–4 threaded studs per letter through the back into the wall, nut inside the can. Flush mounting, no wall gap. Sizes are illustrative.'],
-   drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.'],backer:BACKER_INFO,raceway:RACEWAY_INFO},
+   drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.'],backer:BACKER_INFO,raceway:RACEWAY_INFO,cabinet:CABINET_INFO},
   parts:s=>withMount(s,[['trim','#1d1f21','Trim cap'],['face','#f1ede2',spec(FACE_LIT.face)+' face'],['returns','#8d959e','Returns'],['leds','#f5d791','LED modules'],['wires','#bd655c','18 AWG wiring'],['back','#6d747b','Sealed back'],['studs','#747c88','Threaded studs'],['drain','#272b31','Weep holes']]),
   finishParts:[],internalHidden:['trim','face'],assembledHidden:[],singleParts:['leds','studs','drain'],
   hints:{assembled:'Translucent acrylic face lit from inside. Returns, trim and back stay dark; nothing glows behind the letters.',exploded:'Separated layers: trim cap, acrylic face, front-facing LEDs and wiring, returns, sealed back and studs.',internal:'Face and trim removed to inspect the LEDs and wiring. The LEDs point at the acrylic face.'},
@@ -239,7 +241,7 @@ export const signs={
   componentInfo:{
    face:['Metal face',spec(FABRICATED.face)+' face cut to the letter. Takes the selected finish: polished or brushed metal, or paint.'],
    returns:['Returns',spec(FABRICATED.returns)+' sidewalls at the full sign depth ('+depthOf('fabricated-nonlit').std+'″ standard, '+depthOf('fabricated-nonlit').min+'–'+depthOf('fabricated-nonlit').max+'″), same finish as the face. They sit on the wall: the back is open.'],
-   studs:['Threaded studs','3–4 ¼″Ø threaded studs per letter, welded to the back of the face and set into the wall. Sizes are illustrative.'],backer:BACKER_INFO,raceway:RACEWAY_INFO},
+   studs:['Threaded studs','3–4 ¼″Ø threaded studs per letter, welded to the back of the face and set into the wall. Sizes are illustrative.'],backer:BACKER_INFO,raceway:RACEWAY_INFO,cabinet:CABINET_INFO},
   parts:s=>withMount(s,[['face','#ad9270',spec(FABRICATED.face)+' face'],['returns','#8d959e',spec(FABRICATED.returns)+' returns'],['studs','#747c88','Threaded studs']]),
   finishParts:['face','returns'],internalHidden:['face'],assembledHidden:[],singleParts:['studs'],
   hints:{assembled:'Metal face and returns, flush on the wall. Not illuminated: no LEDs, no back panel.',exploded:'Separated: metal face, returns and the threaded studs welded to the back of the face.',internal:'Face removed: the can is open at the back, and the studs run straight into the wall.'},
