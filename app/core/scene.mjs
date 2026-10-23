@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {createEnvironment} from './materials.mjs?v=12';
+import {createEnvironment} from './materials.mjs?v=13';
 // Renderer, studio lights, camera framing and the wall. Shared by every sign type.
 export function createRenderer(canvas){return new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});}
 export function setupScene(renderer){const studioLights=[];let scene,camera,orbit;
@@ -15,3 +15,5 @@ export function fitObject(camera,orbit,object,direction=new THREE.Vector3(.32,.1
 // Wall plane behind the sign: preset colour with grain, or the uploaded wall photo (flat, no perspective).
 export function createWall(s,wallPhoto,isLit,depth,gap,renderer){const colors={plaster:'#c8c3b7',charcoal:'#323839',white:'#e8e7e1',concrete:'#9fa3a0'},c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');ctx.fillStyle=colors[s.wall];ctx.fillRect(0,0,256,256);const im=ctx.getImageData(0,0,256,256);for(let i=0;i<im.data.length;i+=4){const n=((i*13%23)-11)*(s.wall==='concrete'?.8:.3);for(let j=0;j<3;j++)im.data[i+j]+=n;}ctx.putImageData(im,0,0);const custom=s.wall==='custom'&&wallPhoto,texture=new THREE.CanvasTexture(custom?wallPhoto.canvas:c);if(custom){texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;const photoWidth=8*s.wallscale/100,photoHeight=photoWidth*wallPhoto.canvas.height/wallPhoto.canvas.width;texture.repeat.set(40/photoWidth,25/photoHeight);texture.offset.set((1-texture.repeat.x)/2,(1-texture.repeat.y)/2);texture.anisotropy=renderer.capabilities.getMaxAnisotropy();}else{texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(8,8);}texture.colorSpace=THREE.SRGBColorSpace;const wallMesh=new THREE.Mesh(new THREE.PlaneGeometry(40,25),new THREE.MeshStandardMaterial({map:texture,roughness:1,color:custom?'#999999':isLit?'#dbdcd5':'#ffffff'}));wallMesh.position.z=-depth-gap-.004;wallMesh.receiveShadow=true;return wallMesh;}
 export function wallBackdrop(scene,renderer,s,isLit){scene.background=new THREE.Color(s.wall==='charcoal'?'#353b3b':s.wall==='white'?'#e5e5df':'#d4d3c9');renderer.toneMappingExposure=isLit?1.05:1.15;}
+// Shadow-only plane on the wall of a scene photograph: invisible except where the sign's shadow falls on it.
+export function createShadowCatcher(){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(40,25),new THREE.ShadowMaterial({opacity:.45,depthWrite:false}));mesh.receiveShadow=true;mesh.renderOrder=-1;mesh.visible=false;return mesh;}

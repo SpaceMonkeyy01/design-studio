@@ -26,9 +26,19 @@ export function kelvinRGB(k){const t=k/100;let r=t<=66?255:329.698727446*Math.po
 
 function distanceToSegment(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);}
 function simplifyOpen(points,tolerance){if(points.length<3)return points;let distance=0,index=0;for(let i=1;i<points.length-1;i++){const d=distanceToSegment(points[i],points[0],points.at(-1));if(d>distance){distance=d;index=i;}}return distance>tolerance?[...simplifyOpen(points.slice(0,index+1),tolerance).slice(0,-1),...simplifyOpen(points.slice(index),tolerance)]:[points[0],points.at(-1)];}
-export function smoothContour(points,tolerance=1.25){if(points.length<5)return points;let far=1,distance=0;for(let i=1;i<points.length;i++){const d=Math.hypot(points[i][0]-points[0][0],points[i][1]-points[0][1]);if(d>distance){distance=d;far=i;}}let p=[...simplifyOpen(points.slice(0,far+1),tolerance).slice(0,-1),...simplifyOpen([...points.slice(far),points[0]],tolerance).slice(0,-1)];
- // Protect designed corners; only round low-curvature raster stair steps.
- for(let pass=0;pass<4;pass++){const out=[];for(let i=0;i<p.length;i++){const a=p[(i+p.length-1)%p.length],v=p[i],b=p[(i+1)%p.length],u=[v[0]-a[0],v[1]-a[1]],w=[b[0]-v[0],b[1]-v[1]],lu=Math.hypot(...u),lw=Math.hypot(...w),angle=Math.acos(Math.max(-1,Math.min(1,(u[0]*w[0]+u[1]*w[1])/(lu*lw||1))));if(angle>.64&&Math.min(lu,lw)>Math.max(8,distance*.06)){out.push(v);}else{out.push([v[0]*.75+a[0]*.25,v[1]*.75+a[1]*.25],[v[0]*.75+b[0]*.25,v[1]*.75+b[1]*.25]);}}p=out;}return p;
+// The raster often splits a designed corner over two vertices: a 1–3 px step between two long edges, each vertex turning
+// only part of the way. Replace such a pair by the point where the long edges meet, so the corner test sees one sharp turn.
+function mergeSplitCorners(p){if(p.length<5)return p;const n=p.length,dir=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;return [dx/l,dy/l,l];},turn=(u,w)=>Math.atan2(u[0]*w[1]-u[1]*w[0],u[0]*w[0]+u[1]*w[1]),drop=new Set(),moved=new Map();
+ for(let i=0;i<n;i++){const j=(i+1)%n,h=(i+n-1)%n,k=(i+2)%n;if(drop.has(i)||drop.has(j)||moved.has(i)||moved.has(j)||drop.has(h)||moved.has(h))continue;const before=dir(p[h],p[i]),step=dir(p[i],p[j]),after=dir(p[j],p[k]);
+  if(step[2]>3.5||before[2]<8||after[2]<8)continue;const t1=turn(before,step),t2=turn(step,after);if(Math.sign(t1)!==Math.sign(t2)||Math.abs(t1+t2)<.64)continue;
+  const den=before[0]*after[1]-before[1]*after[0];if(Math.abs(den)<1e-6)continue;const s=((p[j][0]-p[i][0])*after[1]-(p[j][1]-p[i][1])*after[0])/den,x=[p[i][0]+before[0]*s,p[i][1]+before[1]*s];
+  if(Math.hypot(x[0]-p[i][0],x[1]-p[i][1])>4||Math.hypot(x[0]-p[j][0],x[1]-p[j][1])>4)continue;moved.set(i,x);drop.add(j);}
+ return p.flatMap((v,i)=>drop.has(i)?[]:[moved.get(i)||v]);}
+export function smoothContour(points,tolerance=1.25){if(points.length<5)return points;let far=1,distance=0;for(let i=1;i<points.length;i++){const d=Math.hypot(points[i][0]-points[0][0],points[i][1]-points[0][1]);if(d>distance){distance=d;far=i;}}let p=mergeSplitCorners([...simplifyOpen(points.slice(0,far+1),tolerance).slice(0,-1),...simplifyOpen([...points.slice(far),points[0]],tolerance).slice(0,-1)]);
+ // Protect designed corners; round curves and raster steps. After simplification a curve's vertices turn by about
+ // 10/edge-length (radians, edges in px), so turn × shorter edge stays near 10 on any curve and noise spikes (one short
+ // edge) stay low, while a real corner scores far higher. Threshold 12, checked by tests/trace-fidelity-check.mjs.
+ for(let pass=0;pass<4;pass++){const out=[];for(let i=0;i<p.length;i++){const a=p[(i+p.length-1)%p.length],v=p[i],b=p[(i+1)%p.length],u=[v[0]-a[0],v[1]-a[1]],w=[b[0]-v[0],b[1]-v[1]],lu=Math.hypot(...u),lw=Math.hypot(...w),angle=Math.acos(Math.max(-1,Math.min(1,(u[0]*w[0]+u[1]*w[1])/(lu*lw||1))));if(angle>.64&&Math.min(lu,lw)>=3&&angle*Math.min(lu,lw)>12){out.push(v);}else{out.push([v[0]*.75+a[0]*.25,v[1]*.75+a[1]*.25],[v[0]*.75+b[0]*.25,v[1]*.75+b[1]*.25]);}}p=out;}return p;
 }
 export function smoothLoops(loops,tolerance=1.25){return loops.map(l=>({...l,points:smoothContour(l.points,tolerance)}));}
 

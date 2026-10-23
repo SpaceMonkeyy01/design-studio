@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {clippedReturnRings,offsetRegions} from '../../core/artwork.mjs?v=11';
 import {mountingPoints} from '../../core/routing.mjs?v=10';
-import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=12';
+import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=13';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
 import {glowPlane} from '../../core/glow.mjs?v=1';
 import {builtMounting} from '../../core/mounting.mjs?v=2';
 import {SIGNS as REGISTRY,PARTS} from '../../registry.mjs?v=2';
-import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=2';
+import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=3';
 // Channel letters: a traced can (face + returns + back). One parametric build for every channel-letter variant;
 // the variant is a construction config, not code. See CLAUDE.md in this folder.
 //   face      opaque | acrylic | none | half-mirror
