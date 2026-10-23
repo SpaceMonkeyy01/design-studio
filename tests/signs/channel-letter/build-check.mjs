@@ -122,7 +122,7 @@ if (!mounting('channel-letter', 'raceway-2').psuInside || mounting('channel-lett
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');
 const halo = buildChannelLetter(art, {...settings, depth: 1}, true, renderer, CONFIGS['halo-lit']);
 if (!halo.parts.acrylic?.children.length || halo.parts.clamps.children.length < 3 * meaningful || halo.parts.trim) fail('halo-lit config did not build an acrylic back with clamps');
-for (const cfg of [{face: 'acrylic', returns: 'opaque', back: 'acrylic', emit: ['front', 'back']}, {face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']},
+for (const cfg of [{face: 'acrylic', faceVinyl: true, returns: 'opaque', back: 'opaque', emit: ['front']},
   {face: 'opaque', returns: 'opaque', back: 'opaque', emit: []}]) {
   let refused = false; try { buildChannelLetter(art, settings, true, renderer, cfg); } catch (e) { refused = /not built yet/.test(e.message); }
   if (!refused) fail('unbuilt construction was not refused: ' + JSON.stringify(cfg)); }
@@ -157,5 +157,20 @@ if (side.standardDepth !== 1 || side.depthRange.min !== .75 || side.depthRange.m
   if (side.wallGap(sideSt) !== 0 || Math.abs(side.wallDepth(sideSt) - (sideSt.depth + .1019) * sInch) > 1e-9) fail('side-lit: flush on the 0.1019″ back');
   if (Math.abs(sl.parts.back.children[0].geometry.parameters.options.depth - .1019 * sInch) > 1e-9) fail('side-lit back should be 0.1019″');
   for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = side.build(art, {...sideSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('side-lit ' + mid + ' did not build'); } }
+// Face & halo-lit: lit face and lit acrylic back; trim, returns, studs, clamps never glow; two light planes (halo on the wall, glow in
+// front); standoff gap; welded trim always present (not the trim select); every mounting builds.
+const fh = signs['face-halo-lit'], fhSt = {...settings, signtype: 'face-halo-lit', depth: fh.standardDepth, trim: 'none', gap: .5};
+if (fh.standardDepth !== 3 || fh.depthRange.min !== 2.5 || fh.depthRange.max !== 10) fail('face & halo depth should be the registry 3″ (2.5–10″)');
+{ const b = fh.build(art, fhSt, true, renderer); b.root.updateMatrixWorld(true); const fInch = 4 / fhSt.width;
+  if (Object.keys(b.parts).sort().join() !== 'acrylic,clamps,drain,face,leds,returns,studs,trim,wires') fail('face & halo parts: ' + Object.keys(b.parts).sort().join());
+  if (!b.parts.trim.children.length) fail('face & halo: the welded trim is always there (trim select does not apply)');
+  if (!materials(b.parts.face.children[0]).some(glowing) || !materials(b.parts.acrylic.children[0]).some(glowing)) fail('face & halo: face and acrylic back must glow');
+  for (const name of ['trim', 'returns', 'studs', 'clamps', 'drain', 'wires']) b.parts[name].traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('face & halo ' + name + ' glows'); });
+  if (b.parts.clamps.children.length < 3 * meaningful || b.parts.studs.children.length < 3 * meaningful) fail('face & halo: standoff studs and clamps');
+  fh.build(art, fhSt, false, renderer).root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unlit face & halo still glows'); });
+  const planes = [].concat(fh.glow(art, fhSt, true, -fh.wallDepth(fhSt) - fh.wallGap(fhSt), 4 * art.h / art.w));
+  if (planes.length !== 2 || planes.filter(p => p.userData.front).length !== 1 || planes.some(p => p.material.opacity <= 0)) fail('face & halo: one halo on the wall + one glow in front');
+  if (Math.abs(fh.wallGap(fhSt) - .5 * fInch) > 1e-9 || Math.abs(fh.wallDepth(fhSt) - (fhSt.depth + .1875) * fInch) > 1e-9) fail('face & halo: wall behind the 3/16″ back across the gap');
+  for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = fh.build(art, {...fhSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('face & halo ' + mid + ' did not build'); } }
 if (waiting.length) console.log('VARIANTS_WAITING_FOR_REGISTRY', waiting.length, 'rows still "todo":', waiting.join(', '));
 console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));

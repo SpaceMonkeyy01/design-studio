@@ -87,6 +87,12 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   await click('#unlit'); await snap('21-side-lit-unlit'); const sideUnlit = await page.screenshot({ clip: await stage.boundingBox() }); await click('#lit');
   await click('[data-mode=exploded]'); await snap('22-side-lit-exploded'); await click('[data-mode=assembled]');
   results.push({ step: 'side-lit', ok: sideUI.lighting && sideUI.led && sideUI.lit && !sideLit.equals(sideUnlit), ...sideUI });
+  // Face & halo-lit (23–25): lit face + halo; face and returns controls shown, trim select hidden (its trim is welded).
+  await choose('signtype', 'face-halo-lit'); await page.waitForFunction(() => /^Face & halo-lit/.test(document.getElementById('status').textContent)); await choose('wall', 'charcoal');
+  const fhUI = await page.evaluate(() => ({ face: !document.getElementById('facetype').closest('[data-sign]').hidden, trimHidden: document.getElementById('trim').closest('label').hidden, gap: !document.getElementById('gap').closest('label').hidden }));
+  await click('[data-view=front]'); await snap('23-face-halo-lit'); await click('#unlit'); await snap('24-face-halo-lit-unlit'); await click('#lit');
+  await click('[data-mode=exploded]'); await snap('25-face-halo-lit-exploded'); await click('[data-mode=assembled]'); await choose('wall', 'plaster');
+  results.push({ step: 'face & halo-lit', ok: fhUI.face && fhUI.trimHidden && fhUI.gap, ...fhUI });
   await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
 // Build board = landing page (app/index.html): every built variant links into the studio, and "Open Design Studio" opens it
 // with the default sign. Click through to the studio, halo-lit and face-lit Premium.

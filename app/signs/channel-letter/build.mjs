@@ -17,12 +17,13 @@ import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,
 //   emit      subset of front, back, side
 // Materials and gauges per part are PARTS in registry.mjs; these switches only say how light gets out.
 // Built today: halo-lit {opaque, opaque, acrylic, [back]}, face-lit {acrylic, opaque, opaque, [front]}, fabricated-nonlit {opaque, opaque, none, []},
-// side-lit {acrylic+vinyl, translucent, opaque, [side]}.
+// side-lit {acrylic+vinyl, translucent, opaque, [side]}, face-halo-lit {acrylic, opaque, acrylic, [front, back]}.
 export const CONFIGS={
  'halo-lit':{face:'opaque',returns:'opaque',back:'acrylic',emit:['back']},
  'face-lit':{face:'acrylic',returns:'opaque',back:'opaque',emit:['front']},
  'fabricated-nonlit':{face:'opaque',returns:'opaque',back:'none',emit:[]},
  'side-lit':{face:'acrylic',faceVinyl:true,returns:'translucent',back:'opaque',emit:['side']},
+ 'face-halo-lit':{face:'acrylic',returns:'opaque',back:'acrylic',emit:['back','front']},
 };
 const key=c=>[c.face+(c.faceVinyl?'+vinyl':''),c.returns,c.back,[...c.emit].sort().join('+')].join('/'),BUILT=new Map(Object.entries(CONFIGS).map(([id,c])=>[key(c),id]));
 // The construction a config describes. Other switch combinations (side-lit, face & halo, infinity mirror…) are not built yet.
@@ -78,7 +79,7 @@ const callout=t=>{const f=/^(\d+)\/(\d+)"$/.exec(t||'');return f?f[1]/f[2]:parse
 // metalFace = an opaque metal face (halo-lit, fabricated).
 function gauges(kind){const p=PARTS[kind];return {acrylic:callout(p.face?.material==='acrylic'?p.face.thickness:p.back?.thickness)??ACRYLIC,back:callout(p.back?.thickness)??BACK,returns:callout(p.returns?.thickness)??RETURN,metalFace:callout(p.face?.material!=='acrylic'?p.face?.thickness:null)??METAL_FACE};}
 export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construction(cfg),rearLit=cfg.back==='acrylic';builtMounting('channel-letter',s.mounting||'flush');const mountPart=mountOf(s);
- const {root,parts,addPart}=partSet([...(kind==='fabricated-nonlit'?['face','returns','studs']:kind==='side-lit'?['face','returns','leds','wires','back','studs','drain']:rearLit?['face','returns','acrylic','leds','studs','wires','drain','clamps']:['trim','face','returns','leds','wires','back','studs','drain']),...(mountPart?[mountPart.kind]:[])]);
+ const {root,parts,addPart}=partSet([...(kind==='fabricated-nonlit'?['face','returns','studs']:kind==='side-lit'?['face','returns','leds','wires','back','studs','drain']:kind==='face-halo-lit'?['trim','face','returns','leds','wires','acrylic','studs','drain','clamps']:rearLit?['face','returns','acrylic','leds','studs','wires','drain','clamps']:['trim','face','returns','leds','wires','back','studs','drain']),...(mountPart?[mountPart.kind]:[])]);
  const {pos,shapes,uv,contours}=artSpace(art),C=window.ClipperLib;
  const inch=4/s.width,depth=s.depth*inch,gap=rearLit?s.gap*inch:0,backerT=mountDepth(s)*inch,g=kind==='side-lit'?{...gauges(kind),acrylic:gauges('face-lit').acrylic}:gauges(kind),acrylicT=g.acrylic*inch,backT=g.back*inch,trimT=TRIM*inch,band=Math.min(TRIM_BAND,s.depth*.5)*inch,lip=LIP*inch;
  // Extrude Clipper regions [{points, holes}] from z0 to z1 with artwork-space UVs. material: one material, or a function called per region.
@@ -91,9 +92,9 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
  // Returns all module positions (mask px).
  const hardware=({leds,mount,drain})=>{const modules=[];for(const l of art.loops){if(isTinyPiece(l,art))continue;const mounts=mountingPoints(l,art.dist,art.w,art.h,s.mountcount,art.labels),scale=letterScale(mounts,art,inch);const placed=leds(l,scale);modules.push(...placed);for(const m of mounts)mount(l,m);const z=drain(placed);if(z!==null)drainMarker(addPart,l,pos,inch,z);}return modules;};
  const mats=hardwareMaterials.bind(null,s,isLit);
- if(kind==='halo-lit')rearLitCan();else if(kind==='fabricated-nonlit')openBackCan();else if(kind==='side-lit')sideLitCan();else faceLitCan();
+ if(kind==='halo-lit')rearLitCan();else if(kind==='fabricated-nonlit')openBackCan();else if(kind==='side-lit')sideLitCan();else if(kind==='face-halo-lit')faceHaloCan();else faceLitCan();
  // The mounting part's front is where the wall was: behind the acrylic back and the gap (halo-lit), the sealed back (face-lit) or the returns.
- if(mountPart)(mountPart.kind==='raceway'?racewayBox:backerPanel)(kind==='halo-lit'?-depth-acrylicT-gap:kind==='face-lit'||kind==='side-lit'?-depth-backT:-depth);
+ if(mountPart)(mountPart.kind==='raceway'?racewayBox:backerPanel)(rearLit?-depth-acrylicT-gap:kind==='face-lit'||kind==='side-lit'?-depth-backT:-depth);
  return {root,parts};
 
  // Colour of a backer or raceway. Not a finish part: it keeps its own colour. Clear only for an acrylic backer (others draw white).
@@ -113,18 +114,22 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
  function rearLitCan(){const mat=finishMaterial(s,art.texture,renderer);
   metalFace(mat);
   returnsShell(-depth,0,index=>()=>artworkMaterial(mat,index,false,s.finish,art.colors));
-  // Acrylic back: emissive in the LED colour; clear, frosted or opal.
-  const acrylicOptions={clear:{opacity:.25,roughness:.08,faceGlow:.12,edgeGlow:.65},frosted:{opacity:.62,roughness:.7,faceGlow:.75,edgeGlow:.95},opal:{opacity:.94,roughness:.38,faceGlow:1.15,edgeGlow:1.2}}[s.acrylictype]||{opacity:.25,roughness:.08,faceGlow:.12,edgeGlow:.65};const acrylic=new THREE.MeshPhysicalMaterial({color:s.acrylictype==='clear'?'#e4f0f3':'#f4f4ef',emissive:ledColour(s),emissiveIntensity:isLit?s.intensity*acrylicOptions.faceGlow:0,roughness:acrylicOptions.roughness,metalness:0,transparent:true,opacity:acrylicOptions.opacity,clearcoat:1,clearcoatRoughness:.06,side:THREE.DoubleSide,depthWrite:false});acrylic.userData.glowFactor=acrylicOptions.faceGlow;const acrylicEdge=acrylic.clone();acrylicEdge.opacity=Math.max(.6,acrylicOptions.opacity);acrylicEdge.emissiveIntensity=isLit?s.intensity*acrylicOptions.edgeGlow:0;acrylicEdge.userData.glowFactor=acrylicOptions.edgeGlow;for(const shape of shapes()){const glass=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:true,bevelThickness:.005*inch,bevelSize:.005*inch,bevelSegments:2})),[acrylic,acrylicEdge]);glass.position.z=-depth-acrylicT;addPart('acrylic',glass);}
+  acrylicBack();
   const hw=mats(),{studMat}=hw;
   hardware({
    // Rear-facing modules just behind the face; lenses point at the acrylic back.
    leds:(l,scale)=>letterLEDs(addPart,parts,art,l,pos,s,scale,hw,{z:-.06*inch,lens:-1,wireZ:-.06*inch-.11*inch}),
-   // Hollow spacer across the wall gap, threaded stud through its bore, rivnut, and an L-clamp with 2 screws.
-   mount:(l,mountPoint)=>{const p=mountPoint.point,mountStart=parts.studs.children.length,v=pos(p),hardwareInch=inch*mountScale(mountPoint,art,inch),panelBack=-depth-acrylicT,wallZ=panelBack-gap,studEnd=wallZ-backerT-.35*inch;
-    const spacerShape=new THREE.Shape();spacerShape.absarc(0,0,.21*hardwareInch,0,Math.PI*2,false);const bore=new THREE.Path();bore.absarc(0,0,.142*hardwareInch,0,Math.PI*2,true);spacerShape.holes.push(bore);const spacer=new THREE.Mesh(new THREE.ExtrudeGeometry(spacerShape,{depth:gap,bevelEnabled:true,bevelSize:.006*hardwareInch,bevelThickness:.006*hardwareInch,bevelSegments:2,curveSegments:32}),studMat);spacer.position.set(v.x,v.y,wallZ);addPart('studs',spacer);
-    threadedStud(addPart,studMat,v.x,v.y,hardwareInch,{shaftTop:-depth+.15*hardwareInch,end:studEnd,nutTop:-depth+.25*hardwareInch,nutBottom:-depth-.12*hardwareInch,threadTop:panelBack,turns:Math.max(4,Math.round((s.gap+.35)*20))});groupMount(parts,mountStart);addBackClamp(l,mountPoint,hardwareInch,studMat);},
+   mount:(l,m)=>spacerMount(l,m,studMat),
    // Drain marker only on letters with LEDs.
    drain:placed=>placed.length?-depth/2:null});}
+
+ // Acrylic back (halo-lit, face & halo-lit): cut to the letters, emissive in the LED colour; clear, frosted or opal.
+ function acrylicBack(){const acrylicOptions={clear:{opacity:.25,roughness:.08,faceGlow:.12,edgeGlow:.65},frosted:{opacity:.62,roughness:.7,faceGlow:.75,edgeGlow:.95},opal:{opacity:.94,roughness:.38,faceGlow:1.15,edgeGlow:1.2}}[s.acrylictype]||{opacity:.25,roughness:.08,faceGlow:.12,edgeGlow:.65};const acrylic=new THREE.MeshPhysicalMaterial({color:s.acrylictype==='clear'?'#e4f0f3':'#f4f4ef',emissive:ledColour(s),emissiveIntensity:isLit?s.intensity*acrylicOptions.faceGlow:0,roughness:acrylicOptions.roughness,metalness:0,transparent:true,opacity:acrylicOptions.opacity,clearcoat:1,clearcoatRoughness:.06,side:THREE.DoubleSide,depthWrite:false});acrylic.userData.glowFactor=acrylicOptions.faceGlow;const acrylicEdge=acrylic.clone();acrylicEdge.opacity=Math.max(.6,acrylicOptions.opacity);acrylicEdge.emissiveIntensity=isLit?s.intensity*acrylicOptions.edgeGlow:0;acrylicEdge.userData.glowFactor=acrylicOptions.edgeGlow;for(const shape of shapes()){const glass=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:true,bevelThickness:.005*inch,bevelSize:.005*inch,bevelSegments:2})),[acrylic,acrylicEdge]);glass.position.z=-depth-acrylicT;addPart('acrylic',glass);}}
+
+ // Hollow spacer across the wall gap, threaded stud through its bore, rivnut, and an L-clamp with 2 screws (acrylic-backed cans).
+ function spacerMount(l,mountPoint,studMat){const p=mountPoint.point,mountStart=parts.studs.children.length,v=pos(p),hardwareInch=inch*mountScale(mountPoint,art,inch),panelBack=-depth-acrylicT,wallZ=panelBack-gap,studEnd=wallZ-backerT-.35*inch;
+    const spacerShape=new THREE.Shape();spacerShape.absarc(0,0,.21*hardwareInch,0,Math.PI*2,false);const bore=new THREE.Path();bore.absarc(0,0,.142*hardwareInch,0,Math.PI*2,true);spacerShape.holes.push(bore);const spacer=new THREE.Mesh(new THREE.ExtrudeGeometry(spacerShape,{depth:gap,bevelEnabled:true,bevelSize:.006*hardwareInch,bevelThickness:.006*hardwareInch,bevelSegments:2,curveSegments:32}),studMat);spacer.position.set(v.x,v.y,wallZ);addPart('studs',spacer);
+    threadedStud(addPart,studMat,v.x,v.y,hardwareInch,{shaftTop:-depth+.15*hardwareInch,end:studEnd,nutTop:-depth+.25*hardwareInch,nutBottom:-depth-.12*hardwareInch,threadTop:panelBack,turns:Math.max(4,Math.round((s.gap+.35)*20))});groupMount(parts,mountStart);addBackClamp(l,mountPoint,hardwareInch,studMat);}
 
  // Opaque metal face in front of the returns (z 0 to its gauge) with a small bevel; takes the selected finish (flat caps so mirror
  // finishes reflect cleanly). Halo-lit: .045″ (no gauge on its drawing); fabricated: 0.1019″ from PARTS.
@@ -172,16 +177,33 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
   const vinyl=finishMaterial({...s,finish:'artwork',sheen:'satin'},art.texture,renderer),backMat=new THREE.MeshStandardMaterial({color:'#8b9196',metalness:.6,roughness:.5});
   shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:false})),[artworkMaterial(vinyl,index,true,'artwork',art.colors),returnMat]);face.position.z=-acrylicT;face.userData.artIndex=index;addPart('face',face);const back=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:backT,bevelEnabled:false}),backMat);back.position.z=wallZ;addPart('back',back);});}
 
+ // Face & halo-lit: face-lit's front (lit acrylic face in a welded trim cap the colour of the returns) on halo-lit's back (acrylic
+ // back, standoff studs with clamps, halo on the wall). Front-facing LEDs on the acrylic back light both ways. The back's thickness
+ // is not called out on the drawing: 3/16″ ASSUMED (acrylicT, as the face).
+ function faceHaloCan(){const hw=mats(),{studMat}=hw;
+  const modules=hardware({
+   leds:(l,scale)=>{const leds={z:-depth+.06*inch,lens:1,wireZ:-depth+.03*inch};let placed=letterLEDs(addPart,parts,art,l,pos,s,scale,hw,{...leds,spacing:art.w*LED_PITCH/s.width});if(!placed.length)placed=letterLEDs(addPart,parts,art,l,pos,s,scale,hw,leds);return placed;},
+   mount:(l,m)=>spacerMount(l,m,studMat),
+   drain:()=>-depth+.25*inch});
+  const returnBase=finishMaterial({...s,finish:s.returns,sheen:'satin'},art.texture,renderer);
+  returnsShell(-depth,-acrylicT,index=>artworkMaterial(returnBase,index,false,s.returns,art.colors),(index,c)=>{const tm=artworkMaterial(returnBase,index,false,s.returns,art.colors);for(const r of offsetRegions(c,trimT,C)){const rc=[r.points,...r.holes];slab(clippedReturnRings(rc,trimT,C),-band,0,tm,'trim',index);slab(clippedReturnRings(rc,trimT+lip,C),0,trimT,tm,'trim',index);}});
+  const faceMat=acrylicFaceMaterial(art,s,isLit,modules);
+  shapes().forEach((shape,index)=>{const face=new THREE.Mesh(uv(new THREE.ExtrudeGeometry(shape,{depth:acrylicT,bevelEnabled:false})),[faceMat,artworkMaterial(returnBase,index,false,s.returns,art.colors)]);face.position.z=-acrylicT;addPart('face',face);});
+  acrylicBack();}
+
  // L-clamp at the letter edge nearest a mount: bracket on the acrylic back, one screw into the return, one into the acrylic.
  function addBackClamp(letter,mount,unit,material){const boundary=letter.points.reduce((a,b)=>Math.hypot(a[0]-mount.point[0],a[1]-mount.point[1])<Math.hypot(b[0]-mount.point[0],b[1]-mount.point[1])?a:b),edge=pos(boundary),center=pos(mount.point),inward=center.clone().sub(edge).normalize(),angle=Math.atan2(inward.y,inward.x),u=unit*.65;const shape=new THREE.Shape();shape.moveTo(0,0);shape.lineTo(.35*u,0);shape.lineTo(.35*u,.045*u);shape.lineTo(.045*u,.045*u);shape.lineTo(.045*u,.32*u);shape.lineTo(0,.32*u);shape.closePath();const geometry=new THREE.ExtrudeGeometry(shape,{depth:.3*u,bevelEnabled:true,bevelThickness:.004*u,bevelSize:.004*u,bevelSegments:2});geometry.translate(0,0,-.15*u);geometry.rotateX(Math.PI/2);geometry.rotateZ(angle);const bracket=new THREE.Mesh(geometry,material);bracket.position.set(edge.x+inward.x*.04*u,edge.y+inward.y*.04*u,-depth);const group=new THREE.Group();group.add(bracket);const screwX=edge.x+inward.x*.23*u,screwY=edge.y+inward.y*.23*u;const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.045*u,.045*u,.23*u,24),material);shaft.rotation.x=Math.PI/2;shaft.position.set(screwX,screwY,-depth-.08*u);group.add(shaft);const head=new THREE.Mesh(new THREE.SphereGeometry(.075*u,24,12),material);head.scale.z=.4;head.position.set(screwX,screwY,-depth+.06*u);group.add(head);const slot=new THREE.Mesh(new THREE.BoxGeometry(.085*u,.014*u,.01*u),new THREE.MeshStandardMaterial({color:'#454b4f',roughness:.7}));slot.position.set(screwX,screwY,-depth+.092*u);group.add(slot);const sideScrew=new THREE.Mesh(new THREE.CylinderGeometry(.038*u,.038*u,.11*u,24),material);sideScrew.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(inward.x,inward.y,0));sideScrew.position.set(edge.x+inward.x*.035*u,edge.y+inward.y*.035*u,-depth+.21*u);group.add(sideScrew);const sideHead=new THREE.Mesh(new THREE.SphereGeometry(.065*u,24,12),material);sideHead.scale.z=.4;sideHead.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(inward.x,inward.y,0));sideHead.position.set(edge.x+inward.x*.105*u,edge.y+inward.y*.105*u,-depth+.21*u);group.add(sideHead);const sideSlot=new THREE.Mesh(new THREE.BoxGeometry(.075*u,.012*u,.008*u),slot.material);sideSlot.quaternion.copy(sideHead.quaternion);sideSlot.position.copy(sideHead.position).addScaledVector(new THREE.Vector3(inward.x,inward.y,0),.027*u);group.add(sideSlot);group.userData.clampAssembly=true;group.userData.screwCount=2;addPart('clamps',group);}
 }
 
 // Light planes (core/glow.mjs), chosen by `emit`.
 // emit back: halo = the mask blurred (core σ 0.4″ + gap, wide σ 1″ + 2.5 × gap) in the LED colour, just in front of the wall.
-export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+(mountOf(s)&&mountOf(s).kind!=='raceway'?mountDepth(s)*inch:0)+.008});} // on a backer's or cabinet's front; a raceway leaves it on the wall, partly hidden
+export function haloGlow(art,s,isLit,wallZ,height,factor=1.15){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*factor:0,opacityFactor:factor,z:wallZ+(mountOf(s)&&mountOf(s).kind!=='raceway'?mountDepth(s)*inch:0)+.008});} // on a backer's or cabinet's front; a raceway leaves it on the wall, partly hidden
 // emit side: the light the lit returns throw on the wall (or backer / cabinet) around each letter: the mask blurred tight, in the
 // LED colour, just in front of the wall. Only the part outside the letters shows.
 export function sideGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:SPILL_CORE*inch,wide:SPILL_WIDE*inch,tint:ledColour(s),opacity:isLit?s.intensity*SPILL:0,opacityFactor:SPILL,z:wallZ+(mountOf(s)&&mountOf(s).kind!=='raceway'?mountDepth(s)*inch:0)+.008});}
+// emit front + back (face & halo-lit): both planes, the halo on the wall and the face glow in front. Its intensity opens at 50%
+// (for the face), so the halo is 1.5× halo-lit's: at 50% it matches halo-lit's halo at its 75%.
+export const faceHaloGlow=(art,s,isLit,wallZ,height)=>[haloGlow(art,s,isLit,wallZ,height,1.15*1.5),faceGlow(art,s,isLit,wallZ,height)];
 // emit front: face glow = the lit face colours, blurred, on an additive plane just in front of the face. It reads as light
 // spilling past the trim, like bloom in a photo of a lit sign. Front only: nothing is added behind the letters.
 export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
@@ -201,6 +223,8 @@ export const VARIANTS={
  'illuminated-dimensional-letters-face-lit-premium-channel-letters':{sign:'face-lit',options:{trim:PREMIUM_TRIMS}},
  'illuminated-channel-letters-face-lit-premium-channel-letters':{sign:'face-lit',options:{trim:PREMIUM_TRIMS}},
  'illuminated-dimensional-letters-side-lit':{sign:'side-lit'},
+ 'illuminated-dimensional-letters-face-halo-lit':{sign:'face-halo-lit'},
+ 'illuminated-channel-letters-face-halo-lit':{sign:'face-halo-lit'},
  'illuminated-channel-letters-side-lit':{sign:'side-lit'},
  'dimensional-fabricated-letters-painted-finish-same-as-logo':{sign:'fabricated-nonlit',options:{finish:PAINTS}},
  'dimensional-fabricated-letters-polished-gold':{sign:'fabricated-nonlit',options:{finish:['gold-mirror']}},
@@ -213,7 +237,7 @@ export const VARIANTS={
 // Depth (inches: min, max, std) each sign is sold at, from the registry rows that open it (all its rows agree; tested).
 const depthOf=id=>{const {min,max,std}=REGISTRY.find(r=>VARIANTS[r.id]?.sign===id).depth;return {min,max,std};};
 // Inspector text for one PARTS entry: '0.0630″ aluminum'. Call-outs use ", the studio shows ″.
-const spec=part=>((part.thickness?part.thickness+' ':'')+part.material).replace(/"/g,'″'),FACE_LIT=PARTS['face-lit'],FABRICATED=PARTS['fabricated-nonlit'],SIDE_LIT=PARTS['side-lit'];
+const spec=part=>((part.thickness?part.thickness+' ':'')+part.material).replace(/"/g,'″'),FACE_LIT=PARTS['face-lit'],FABRICATED=PARTS['fabricated-nonlit'],SIDE_LIT=PARTS['side-lit'],FACE_HALO=PARTS['face-halo-lit'];
 // Mountings every channel-letter sign offers, and the mounting part's explorer button, inspector text and exploded offset.
 const MOUNTINGS=['flush','raceway-2','backer-acm-4','backer-acrylic-8','backer-aluminum-25','backboard-cabinet-2'];
 const withMount=(s,list)=>{const m=mountOf(s);return m?[...list,[m.kind,'#d8d6cc',m.kind==='raceway'?'2″ raceway':m.kind==='cabinet'?'2″ backboard cabinet':m.material+' backer']]:list;},exploded=(s,offsets)=>mountOf(s)?{...offsets,[mountOf(s).kind]:-1.05}:offsets;
@@ -288,5 +312,24 @@ export const signs={
   parts:s=>withMount(s,[['face','#ad9270','Vinyl face'],['returns','#e8f2f4','Lit acrylic returns'],['leds','#f5d791','LED modules'],['wires','#bd655c','18 AWG wiring'],['back','#6d747b','Sealed back'],['studs','#747c88','Threaded studs'],['drain','#272b31','Weep holes']]),
   finishParts:[],internalHidden:['face'],assembledHidden:[],singleParts:['leds','studs','drain'],
   hints:{assembled:'Opaque vinyl face. The acrylic returns glow: light leaves through the sides and washes the wall around each letter.',exploded:'Separated layers: vinyl face, front-facing LEDs and wiring, acrylic returns, sealed back and studs.',internal:'Face removed to inspect the LEDs and wiring. The LEDs light the acrylic returns from inside.'},
-  specs:(s,led)=>s.depth+'″ depth · lit acrylic returns · '+led}
+  specs:(s,led)=>s.depth+'″ depth · lit acrylic returns · '+led},
+ 'face-halo-lit':{id:'face-halo-lit',label:'Face & halo-lit',config:CONFIGS['face-halo-lit'],construction:'channel-letter',mountings:MOUNTINGS,mount:mountOf,standardDepth:depthOf('face-halo-lit').std,depthRange:depthOf('face-halo-lit'),defaultIntensity:50,
+  build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['face-halo-lit']),glow:faceHaloGlow,
+  // Wall behind the acrylic back, across the standoff gap (and behind the mounting part, when there is one).
+  wallDepth:s=>(s.depth+gauges('face-halo-lit').acrylic+mountDepth(s))*(4/s.width),wallGap:s=>s.gap*(4/s.width),
+  explodedOffsets:s=>{const d=s.depth*4/s.width;return exploded(s,{trim:1.05,face:.7,leds:d+.3,wires:d+.25,returns:0,drain:0,acrylic:-.45,clamps:-.3,studs:-.75});},
+  componentInfo:{
+   trim:['Welded trim cap','Aluminium lip welded to the returns, holding the face: the colour of the returns. 1″ band and ⅛″ lip as face-lit (assumed).'],
+   face:['Acrylic face',spec(FACE_HALO.face)+' face, translucent, cut to the letter. White acrylic with translucent vinyl, or solid-tinted acrylic. Lit from inside.'],
+   returns:['Returns','Opaque painted '+spec(FACE_HALO.returns)+' sidewalls at the full sign depth ('+depthOf('face-halo-lit').std+'″ standard, '+depthOf('face-halo-lit').min+'–'+depthOf('face-halo-lit').max+'″). Never lit.'],
+   leds:['LED module','Module with three lenses on the acrylic back, facing the face; light leaves through the face and through the back. Positions are illustrative.'],
+   wires:['18 AWG wiring','Illustrative red / white wiring between LED modules inside the letters.'],
+   acrylic:['Acrylic back','Acrylic back cut to the letter (thickness not on the drawing: 3/16″ assumed). Clear, frosted or opal; it lights the halo on the wall.'],
+   studs:['Standoff studs','Hollow spacer across the wall gap with a ¼″Ø threaded stud through it, 3–4 per letter. Sizes are illustrative.'],
+   clamps:['L brackets + screws','Brackets holding the acrylic back to the returns, two screws each. Positions are illustrative.'],
+   drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.'],backer:BACKER_INFO,raceway:RACEWAY_INFO,cabinet:CABINET_INFO},
+  parts:s=>withMount(s,[['trim','#8d959e','Welded trim cap'],['face','#f1ede2',spec(FACE_HALO.face)+' face'],['returns','#8d959e','Returns'],['leds','#f5d791','LED modules'],['wires','#bd655c','18 AWG wiring'],['acrylic','#a8d7e6','Acrylic back'],['studs','#747c88','Standoff studs'],['clamps','#9aa4aa','L brackets + screws'],['drain','#272b31','Weep holes']]),
+  finishParts:[],internalHidden:['trim','face'],assembledHidden:['clamps'],singleParts:['leds','studs','drain','clamps'],
+  hints:{assembled:'Lit acrylic face at the front and a halo on the wall behind: the LEDs light both ways.',exploded:'Separated layers: welded trim, acrylic face, LEDs and wiring, returns, acrylic back, clamps and standoff studs.',internal:'Face and trim removed to inspect the LEDs and wiring on the acrylic back.'},
+  specs:(s,led)=>s.depth+'″ depth · '+(s.facetype==='tinted'?'tinted':'vinyl')+' face + halo · '+s.gap+'″ gap · '+led}
 };

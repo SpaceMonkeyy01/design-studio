@@ -26,6 +26,7 @@ Built today:
 | Construction | face | returns | back | emit | Light plane |
 |---|---|---|---|---|---|
 | side-lit | acrylic + vinyl | translucent | opaque | side | spill on the wall (`sideGlow`) |
+| face-halo-lit | acrylic | opaque | acrylic | front, back | halo on the wall + face glow (`faceHaloGlow`) |
 | halo-lit | opaque | opaque | acrylic | back | halo on the wall (`haloGlow`) |
 | face-lit | acrylic | opaque | opaque | front | face glow in front of the face (`faceGlow`) |
 | fabricated-nonlit | opaque | opaque | none | — | none (`lit: false`) |
@@ -127,6 +128,18 @@ From the Estimator cross-section (`references/channel-letter/side-lit/flush.png`
 - **LEDs, back, studs, weep holes**: as face-lit (front-facing modules ~4″ apart on the 0.1019″ sealed back, flush studs). No trim. Every mounting works.
 - **Defaults**: 1″ depth (0.75–10″, registry), 75% intensity, 6500K.
 - **Registry**: the two Side-Lit rows were set to `done` by hand on 2026-10-23 at the user's request (as the fabricated rows were): the source generator must mark them done too, or the next regeneration reverts it.
+
+## Face & halo-lit — `face: acrylic, returns: opaque, back: acrylic, emit: [front, back]`
+
+From the Estimator cross-section (`references/channel-letter/face-halo-lit/flush.png`, `PARTS['face-halo-lit']`): face-lit's front on halo-lit's back.
+
+- **Front** (as face-lit): 3/16″ lit acrylic face (Face select: vinyl or tinted), returns 0.0630″ in the Returns colour, face glow plane in front.
+- **Welded trim cap**: always there, the colour of the returns (the Trim select is face-lit only); same band and lip as face-lit's trim (**ASSUMED**).
+- **Back** (as halo-lit): acrylic back, **3/16″ ASSUMED** (not called out on the drawing); Rear acrylic select (clear, frosted, opal); standoff studs across the Wall gap with L-clamps (`spacerMount`, shared with halo-lit); halo on the wall.
+- **LEDs**: on the acrylic back facing the face, ~4″ apart; light leaves both ways.
+- **Two light planes**: `faceHaloGlow` returns [halo, face glow]; the app handles a list of planes (`glows`), and the cutout export writes a halo and a glow layer (stack wall → halo → sign → glow). The halo is 1.5× halo-lit's, because intensity opens at 50% (for the face): at 50% it matches halo-lit's halo at 75%.
+- **Defaults**: 3″ depth (2.5–10″, registry), ¼″ gap, 50% intensity. Screenshots 23–25.
+- **Registry**: the two Face & Halo-Lit rows are mapped in `VARIANTS` but `todo` in `registry.mjs` until it is regenerated or marked done.
 
 ## Fabricated non-lit — `back: none, emit: []`
 
