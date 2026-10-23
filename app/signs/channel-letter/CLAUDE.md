@@ -139,7 +139,7 @@ From the Estimator cross-section (`references/channel-letter/face-halo-lit/flush
 - **LEDs**: on the acrylic back facing the face, ~4″ apart; light leaves both ways.
 - **Two light planes**: `faceHaloGlow` returns [halo, face glow]; the app handles a list of planes (`glows`), and the cutout export writes a halo and a glow layer (stack wall → halo → sign → glow). The halo is 1.5× halo-lit's, because intensity opens at 50% (for the face): at 50% it matches halo-lit's halo at 75%.
 - **Defaults**: 3″ depth (2.5–10″, registry), ¼″ gap, 50% intensity. Screenshots 23–25.
-- **Registry**: the two Face & Halo-Lit rows are mapped in `VARIANTS` but `todo` in `registry.mjs` until it is regenerated or marked done.
+- **Registry**: the two Face & Halo-Lit rows were set to `done` by hand on 2026-10-23 at the user's request (as side-lit and fabricated): the source generator must mark them done too, or the next regeneration reverts it.
 
 ## Fabricated non-lit — `back: none, emit: []`
 
