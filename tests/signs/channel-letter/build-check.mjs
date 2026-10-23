@@ -172,5 +172,21 @@ if (fh.standardDepth !== 3 || fh.depthRange.min !== 2.5 || fh.depthRange.max !==
   if (planes.length !== 2 || planes.filter(p => p.userData.front).length !== 1 || planes.some(p => p.material.opacity <= 0)) fail('face & halo: one halo on the wall + one glow in front');
   if (Math.abs(fh.wallGap(fhSt) - .5 * fInch) > 1e-9 || Math.abs(fh.wallDepth(fhSt) - (fhSt.depth + .1875) * fInch) > 1e-9) fail('face & halo: wall behind the 3/16″ back across the gap');
   for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = fh.build(art, {...fhSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('face & halo ' + mid + ' did not build'); } }
+// Face & side-lit: the lit face and the acrylic returns glow; back, studs, drain, wiring never; spill on the wall + face glow in front;
+// flush; returns and spill 1.5× side-lit's; every mounting builds.
+const fs2 = signs['face-side-lit'], fsSt = {...settings, signtype: 'face-side-lit', depth: fs2.standardDepth};
+if (fs2.standardDepth !== 3 || fs2.depthRange.min !== 2 || fs2.depthRange.max !== 5) fail('face & side depth should be the registry 3″ (2–5″)');
+{ const b = fs2.build(art, fsSt, true, renderer); b.root.updateMatrixWorld(true);
+  if (Object.keys(b.parts).sort().join() !== 'back,drain,face,leds,returns,studs,wires') fail('face & side parts: ' + Object.keys(b.parts).sort().join());
+  if (!glowing(materials(b.parts.face.children[0])[0]) || !materials(b.parts.returns.children[0]).some(glowing)) fail('face & side: face and returns must glow');
+  if (materials(b.parts.returns.children[0])[0].userData.glowFactor !== 4.5) fail('face & side returns should be 1.5× side-lit');
+  for (const name of ['back', 'studs', 'drain', 'wires']) b.parts[name].traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('face & side ' + name + ' glows'); });
+  fs2.build(art, fsSt, false, renderer).root.traverse(o => { if (o.isMesh && materials(o).some(glowing)) fail('unlit face & side still glows'); });
+  const planes = [].concat(fs2.glow(art, fsSt, true, -fs2.wallDepth(fsSt), 4 * art.h / art.w));
+  if (planes.length !== 2 || planes.filter(p => p.userData.front).length !== 1 || planes.some(p => p.material.opacity <= 0)) fail('face & side: spill on the wall + glow in front');
+  if (fs2.wallGap(fsSt) !== 0 || Math.abs(fs2.wallDepth(fsSt) - (fsSt.depth + .1019) * 4 / fsSt.width) > 1e-9) fail('face & side: flush on the 0.1019″ back');
+  for (const mid of ['raceway-2', 'backer-acm-4', 'backboard-cabinet-2']) { const m = fs2.build(art, {...fsSt, mounting: mid}, true, renderer); if (!m.parts[{ 'raceway-2': 'raceway', 'backer-acm-4': 'backer', 'backboard-cabinet-2': 'cabinet' }[mid]]?.children.length) fail('face & side ' + mid + ' did not build'); }
+  // Side-lit is unchanged by the shared can: vinyl face, returns at 3.
+  const sl = signs['side-lit'].build(art, {...settings, signtype: 'side-lit', depth: 1}, true, renderer); if (materials(sl.parts.returns.children[0])[0].userData.glowFactor !== 3 || glowing(materials(sl.parts.face.children[0])[0])) fail('side-lit changed'); }
 if (waiting.length) console.log('VARIANTS_WAITING_FOR_REGISTRY', waiting.length, 'rows still "todo":', waiting.join(', '));
 console.log('CHANNEL_LETTER_BUILD_OK', JSON.stringify({pieces, trim: parts.trim.children.length, mounts: parts.studs.children.length, leds: parts.leds.children.length, weep: parts.drain.children.length}));

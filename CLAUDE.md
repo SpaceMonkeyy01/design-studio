@@ -4,7 +4,7 @@ Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D s
 No backend, no API keys, no build step. Plain ES modules + vendored Three.js r186 + Clipper 6.4.2.
 
 Origin: Halo Studio, built in ChatGPT by a teammate and handed over on 2026-10-19 (`docs/handover/`). Everything after the original history was made by us.
-Implemented: **halo-lit**, **face-lit**, **side-lit**, **face & halo-lit** and **fabricated (non-lit)**, all from the one `channel-letter` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
+Implemented: **halo-lit**, **face-lit**, **side-lit**, **face & halo-lit**, **face & side-lit** and **fabricated (non-lit)** channel letters, all from the one `channel-letter` construction, and **push-through** cabinets (face-lit and halo-lit) from the `cabinet` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
 
 ## Run
 
@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated, 20–22 side-lit, 23–25 face & halo-lit). Subfolders (`cutout/`, `scene/`, `reference/`) are checked by assertions, not compared.
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated, 20–22 side-lit, 23–25 face & halo-lit, 26–28 face & side-lit, 29–32 push-through). Subfolders (`cutout/`, `scene/`, `reference/`) are checked by assertions, not compared.
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 
@@ -43,6 +43,7 @@ app/
     materials.mjs  finishes, LED colour, env map, artwork colours
     scene.mjs      renderer, lights, camera framing, wall
     shapes.mjs     artwork space → world: pos, shapes, UVs, contours, flat caps
+    litface.mjs    lit acrylic face material + face glow plane (face-lit letters, push-through letters)
     glow.mjs       light planes: blurred image on an additive plane (halo, face glow); a sign may have several (`glows` in app.js)
     mounting.mjs   which mountings of each construction are built (sets come from MOUNTING_SETS in registry.mjs; only channel-letter flush draws geometry)
     hardware.mjs   part groups, LED modules + routed wiring, threaded studs, drain markers
@@ -51,6 +52,7 @@ app/
   signs/
     channel-letter/  build.mjs (CONFIGS switches, buildChannelLetter, light planes, `signs` interface) + CLAUDE.md
                      halo-lit and face-lit are configs of this one build
+    cabinet/         build.mjs (push-through: face-lit and halo-lit) + CLAUDE.md
     <construction>/  one folder per construction, same shape (not created until its work starts)
 tests/
   fixtures/        shared test logos (add one per artwork bug fixed)
