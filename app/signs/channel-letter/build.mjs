@@ -5,7 +5,7 @@ import {mountingPoints} from '../../core/routing.mjs?v=10';
 import {finishMaterial,artworkMaterial,ledColour} from '../../core/materials.mjs?v=13';
 import {artSpace,flatCaps} from '../../core/shapes.mjs?v=1';
 import {glowPlane} from '../../core/glow.mjs?v=1';
-import {builtMounting} from '../../core/mounting.mjs?v=2';
+import {builtMounting} from '../../core/mounting.mjs?v=3';
 import {SIGNS as REGISTRY,PARTS} from '../../registry.mjs?v=2';
 import {partSet,hardwareMaterials,isTinyPiece,letterScale,mountScale,letterLEDs,threadedStud,groupMount,drainMarker} from '../../core/hardware.mjs?v=3';
 // Channel letters: a traced can (face + returns + back). One parametric build for every channel-letter variant;
@@ -34,6 +34,11 @@ const FACE_GLOW=2.4;
 // Face glow plane in front of a lit face: blur sigmas (inches) and strength.
 const GLOW_CORE=.35,GLOW_WIDE=1.4,GLOW=.8;
 const TRIM_FINISH={black:'black',white:'white',artwork:'artwork',silver:'silver-brushed',gold:'gold-brushed',bronze:'bronze-brushed'};
+// Flat backers (MOUNTING_SETS): a panel flat on the wall, the letters stud-mounted through it. Thickness and material are the
+// mounting's (4 mm ACM, 8 mm acrylic, 2.5 mm aluminium). ASSUMED until the shop confirms: a rectangle around the artwork with a
+// 3″ margin (s.backermargin), square corners, white (s.backercolour: white, black, silver, clear for acrylic only).
+const BACKERS={'backer-acm-4':{material:'ACM',thickness:4/25.4},'backer-acrylic-8':{material:'acrylic',thickness:8/25.4},'backer-aluminum-25':{material:'aluminium',thickness:2.5/25.4}};
+export const backerOf=s=>BACKERS[s.mounting]||null;const backerThickness=s=>backerOf(s)?.thickness||0;
 
 // The colour a lit acrylic face shows, painted in mask pixels: vinyl artwork, one tint per letter, or white for an all-black logo.
 // Near-black artwork stays dark; an all-black logo lights white instead (black by day, white at night).
@@ -63,10 +68,10 @@ const callout=t=>{const f=/^(\d+)\/(\d+)"$/.exec(t||'');return f?f[1]/f[2]:parse
 // Part gauges of a built construction from PARTS (registry.mjs). acrylic = the lit acrylic part: the face (face-lit) or the back (halo-lit);
 // metalFace = an opaque metal face (halo-lit, fabricated).
 function gauges(kind){const p=PARTS[kind];return {acrylic:callout(p.face?.material==='acrylic'?p.face.thickness:p.back?.thickness)??ACRYLIC,back:callout(p.back?.thickness)??BACK,returns:callout(p.returns?.thickness)??RETURN,metalFace:callout(p.face?.material!=='acrylic'?p.face?.thickness:null)??METAL_FACE};}
-export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construction(cfg),rearLit=cfg.back==='acrylic';builtMounting('channel-letter',s.mounting||'flush');
- const {root,parts,addPart}=partSet(kind==='fabricated-nonlit'?['face','returns','studs']:rearLit?['face','returns','acrylic','leds','studs','wires','drain','clamps']:['trim','face','returns','leds','wires','back','studs','drain']);
+export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construction(cfg),rearLit=cfg.back==='acrylic';builtMounting('channel-letter',s.mounting||'flush');const backer=backerOf(s);
+ const {root,parts,addPart}=partSet([...(kind==='fabricated-nonlit'?['face','returns','studs']:rearLit?['face','returns','acrylic','leds','studs','wires','drain','clamps']:['trim','face','returns','leds','wires','back','studs','drain']),...(backer?['backer']:[])]);
  const {pos,shapes,uv,contours}=artSpace(art),C=window.ClipperLib;
- const inch=4/s.width,depth=s.depth*inch,gap=rearLit?s.gap*inch:0,g=gauges(kind),acrylicT=g.acrylic*inch,backT=g.back*inch,trimT=TRIM*inch,band=Math.min(TRIM_BAND,s.depth*.5)*inch,lip=LIP*inch;
+ const inch=4/s.width,depth=s.depth*inch,gap=rearLit?s.gap*inch:0,backerT=backerThickness(s)*inch,g=gauges(kind),acrylicT=g.acrylic*inch,backT=g.back*inch,trimT=TRIM*inch,band=Math.min(TRIM_BAND,s.depth*.5)*inch,lip=LIP*inch;
  // Extrude Clipper regions [{points, holes}] from z0 to z1 with artwork-space UVs. material: one material, or a function called per region.
  // Rings of tiny pieces can collapse to <3 points: skip them.
  const slab=(regions,z0,z1,material,part,index)=>{for(const r of regions){if(r.points.length<3)continue;const shape=new THREE.Shape(r.points.map(p=>new THREE.Vector2(...p)));shape.holes=r.holes.filter(h=>h.length>=3).map(h=>new THREE.Path(h.map(p=>new THREE.Vector2(...p))));const raw=new THREE.ExtrudeGeometry(shape,{depth:z1-z0,bevelEnabled:false,steps:1});raw.translate(0,0,z0);raw.scale(100,100,100);const g=toCreasedNormals(raw,.8);g.scale(.01,.01,.01);uv(g);const m=new THREE.Mesh(g,typeof material==='function'?material():material);m.userData.artIndex=index;m.userData.faceSurface=false;addPart(part,m);}};
@@ -78,7 +83,15 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
  const hardware=({leds,mount,drain})=>{const modules=[];for(const l of art.loops){if(isTinyPiece(l,art))continue;const mounts=mountingPoints(l,art.dist,art.w,art.h,s.mountcount,art.labels),scale=letterScale(mounts,art,inch);const placed=leds(l,scale);modules.push(...placed);for(const m of mounts)mount(l,m);const z=drain(placed);if(z!==null)drainMarker(addPart,l,pos,inch,z);}return modules;};
  const mats=hardwareMaterials.bind(null,s,isLit);
  if(kind==='halo-lit')rearLitCan();else if(kind==='fabricated-nonlit')openBackCan();else faceLitCan();
+ // The backer's front is where the wall was: behind the acrylic back and the gap (halo-lit), the sealed back (face-lit) or the returns.
+ if(backer)backerPanel(kind==='halo-lit'?-depth-acrylicT-gap:kind==='face-lit'?-depth-backT:-depth);
  return {root,parts};
+
+ // Flat backer: one rectangle around the artwork plus the margin, from its front (z) back to the wall. Not a finish part: it keeps
+ // its own colour. Clear is offered for acrylic only; any other backer asked for clear is drawn white.
+ function backerPanel(front){const m=Math.max(0,s.backermargin??3)*inch,w=4+2*m,h=4*art.h/art.w+2*m,colour=s.backercolour==='clear'&&backer.material!=='acrylic'?'white':s.backercolour||'white';
+  const mat=colour==='silver'?finishMaterial({...s,finish:'silver-brushed'},art.texture,renderer):colour==='clear'?new THREE.MeshPhysicalMaterial({color:'#e4f0f3',transparent:true,opacity:.3,roughness:.06,metalness:0,clearcoat:1,clearcoatRoughness:.05,depthWrite:false}):new THREE.MeshStandardMaterial({color:colour==='black'?'#1b1d1e':'#efeee9',roughness:backer.material==='acrylic'?.15:.5,metalness:0});
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(w,h,backerT),mat);panel.position.z=front-backerT/2;addPart('backer',panel);}
 
  // Halo-lit: opaque metal face and returns, rear-facing LEDs, acrylic back, spacer + stud mounts with L-clamps across the wall gap.
  function rearLitCan(){const mat=finishMaterial(s,art.texture,renderer);
@@ -91,7 +104,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
    // Rear-facing modules just behind the face; lenses point at the acrylic back.
    leds:(l,scale)=>letterLEDs(addPart,parts,art,l,pos,s,scale,hw,{z:-.06*inch,lens:-1,wireZ:-.06*inch-.11*inch}),
    // Hollow spacer across the wall gap, threaded stud through its bore, rivnut, and an L-clamp with 2 screws.
-   mount:(l,mountPoint)=>{const p=mountPoint.point,mountStart=parts.studs.children.length,v=pos(p),hardwareInch=inch*mountScale(mountPoint,art,inch),panelBack=-depth-acrylicT,wallZ=panelBack-gap,studEnd=wallZ-.35*inch;
+   mount:(l,mountPoint)=>{const p=mountPoint.point,mountStart=parts.studs.children.length,v=pos(p),hardwareInch=inch*mountScale(mountPoint,art,inch),panelBack=-depth-acrylicT,wallZ=panelBack-gap,studEnd=wallZ-backerT-.35*inch;
     const spacerShape=new THREE.Shape();spacerShape.absarc(0,0,.21*hardwareInch,0,Math.PI*2,false);const bore=new THREE.Path();bore.absarc(0,0,.142*hardwareInch,0,Math.PI*2,true);spacerShape.holes.push(bore);const spacer=new THREE.Mesh(new THREE.ExtrudeGeometry(spacerShape,{depth:gap,bevelEnabled:true,bevelSize:.006*hardwareInch,bevelThickness:.006*hardwareInch,bevelSegments:2,curveSegments:32}),studMat);spacer.position.set(v.x,v.y,wallZ);addPart('studs',spacer);
     threadedStud(addPart,studMat,v.x,v.y,hardwareInch,{shaftTop:-depth+.15*hardwareInch,end:studEnd,nutTop:-depth+.25*hardwareInch,nutBottom:-depth-.12*hardwareInch,threadTop:panelBack,turns:Math.max(4,Math.round((s.gap+.35)*20))});groupMount(parts,mountStart);addBackClamp(l,mountPoint,hardwareInch,studMat);},
    // Drain marker only on letters with LEDs.
@@ -107,7 +120,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
   metalFace(mat);
   returnsShell(-depth,0,index=>()=>artworkMaterial(mat,index,false,s.finish,art.colors));
   hardware({leds:()=>[],drain:()=>null,
-   mount:(l,m)=>{const start=parts.studs.children.length,v=pos(m.point),h=inch*mountScale(m,art,inch);threadedStud(addPart,studMat,v.x,v.y,h,{shaftTop:0,end:-depth-.35*inch,nutTop:0,nutBottom:-.25*h,threadTop:-.25*h,turns:Math.max(4,Math.round((s.depth+.35)*20))});groupMount(parts,start);}});}
+   mount:(l,m)=>{const start=parts.studs.children.length,v=pos(m.point),h=inch*mountScale(m,art,inch);threadedStud(addPart,studMat,v.x,v.y,h,{shaftTop:0,end:-depth-backerT-.35*inch,nutTop:0,nutBottom:-.25*h,threadTop:-.25*h,turns:Math.max(4,Math.round((s.depth+.35)*20))});groupMount(parts,start);}});}
 
  // Face-lit: trim cap, lit acrylic face, opaque returns, front-facing LEDs on a sealed back, flush threaded studs.
  function faceLitCan(){const wallZ=-depth-backT,hw=mats(),{studMat}=hw;
@@ -116,7 +129,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
    // Front-facing modules on the sealed back, ≈4″ pitch; a letter too small for that gets the denser default spacing.
    leds:(l,scale)=>{const leds={z:-depth+.06*inch,lens:1,wireZ:-depth+.03*inch};let placed=letterLEDs(addPart,parts,art,l,pos,s,scale,hw,{...leds,spacing:art.w*LED_PITCH/s.width});if(!placed.length)placed=letterLEDs(addPart,parts,art,l,pos,s,scale,hw,leds);return placed;},
    // Threaded stud through the back into the wall, nut inside the can. No spacer, no clamps: flush, no acrylic back.
-   mount:(l,m)=>{const start=parts.studs.children.length,v=pos(m.point),h=inch*mountScale(m,art,inch);threadedStud(addPart,studMat,v.x,v.y,h,{shaftTop:-depth+.15*h,end:wallZ-.35*inch,nutTop:-depth+.2*h,nutBottom:-depth,threadTop:-depth,turns:Math.max(4,Math.round((g.back+.35)*20))});groupMount(parts,start);},
+   mount:(l,m)=>{const start=parts.studs.children.length,v=pos(m.point),h=inch*mountScale(m,art,inch);threadedStud(addPart,studMat,v.x,v.y,h,{shaftTop:-depth+.15*h,end:wallZ-backerT-.35*inch,nutTop:-depth+.2*h,nutBottom:-depth,threadTop:-depth,turns:Math.max(4,Math.round((g.back+.35)*20))});groupMount(parts,start);},
    // Weep hole at the lowest point of every letter, just above the back.
    drain:()=>-depth+.25*inch});
   // Returns behind the face, and the trim cap: a band over the returns plus a lip over the face edge.
@@ -133,7 +146,7 @@ export function buildChannelLetter(art,s,isLit,renderer,cfg){const kind=construc
 
 // Light planes (core/glow.mjs), chosen by `emit`.
 // emit back: halo = the mask blurred (core σ 0.4″ + gap, wide σ 1″ + 2.5 × gap) in the LED colour, just in front of the wall.
-export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+.008});}
+export function haloGlow(art,s,isLit,wallZ,height){const inch=4/s.width;return glowPlane(art.glowSource,height,{core:inch*(.4+s.gap),wide:inch*(1+2.5*s.gap),tint:ledColour(s),opacity:isLit?s.intensity*1.15:0,opacityFactor:1.15,z:wallZ+backerThickness(s)*inch+.008});} // on the backer's front when there is one
 // emit front: face glow = the lit face colours, blurred, on an additive plane just in front of the face. It reads as light
 // spilling past the trim, like bloom in a photo of a lit sign. Front only: nothing is added behind the letters.
 export function faceGlow(art,s,isLit,wallZ,height){const inch=4/s.width,c=document.createElement('canvas');c.width=art.w;c.height=art.h;const x=c.getContext('2d');faceColour(art,s).paint(x);x.globalCompositeOperation='destination-in';x.drawImage(art.glowSource,0,0);
@@ -164,13 +177,17 @@ export const VARIANTS={
 const depthOf=id=>{const {min,max,std}=REGISTRY.find(r=>VARIANTS[r.id]?.sign===id).depth;return {min,max,std};};
 // Inspector text for one PARTS entry: '0.0630″ aluminum'. Call-outs use ", the studio shows ″.
 const spec=part=>((part.thickness?part.thickness+' ':'')+part.material).replace(/"/g,'″'),FACE_LIT=PARTS['face-lit'],FABRICATED=PARTS['fabricated-nonlit'];
+// Mountings every channel-letter sign offers, and the backer's explorer button, inspector text and exploded offset.
+const MOUNTINGS=['flush','backer-acm-4','backer-acrylic-8','backer-aluminum-25'];
+const withBacker=(s,list)=>backerOf(s)?[...list,['backer','#d8d6cc',backerOf(s).material+' backer']]:list,exploded=(s,offsets)=>backerOf(s)?{...offsets,backer:-1.05}:offsets;
+const BACKER_INFO=['Backer panel','Flat panel on the wall behind the letters: 4 mm ACM, 8 mm acrylic or 2.5 mm aluminium, as chosen. The letters are stud-mounted through it; the power supply stays behind the wall. Rectangle with a 3″ margin, square corners and colour are assumed until the shop confirms them.'];
 // Sign-type interface read by app.js, one per built construction (the studio's Sign type control).
 export const signs={
- 'halo-lit':{id:'halo-lit',label:'Halo-lit',config:CONFIGS['halo-lit'],mountings:['flush'],standardDepth:depthOf('halo-lit').std,depthRange:depthOf('halo-lit'),defaultIntensity:75,
+ 'halo-lit':{id:'halo-lit',label:'Halo-lit',config:CONFIGS['halo-lit'],construction:'channel-letter',mountings:MOUNTINGS,backer:backerOf,standardDepth:depthOf('halo-lit').std,depthRange:depthOf('halo-lit'),defaultIntensity:75,
   build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['halo-lit']),glow:haloGlow,
-  // Wall sits behind the acrylic back, across the wall gap.
-  wallDepth:s=>(s.depth+gauges('halo-lit').acrylic)*(4/s.width),wallGap:s=>s.gap*(4/s.width),
-  explodedOffsets:{face:.9,returns:.2,leds:.6,acrylic:-.55,studs:-.7,wires:.4,drain:.2,clamps:-.35},
+  // Wall sits behind the acrylic back, across the wall gap (and behind the backer, when there is one).
+  wallDepth:s=>(s.depth+gauges('halo-lit').acrylic+backerThickness(s))*(4/s.width),wallGap:s=>s.gap*(4/s.width),
+  explodedOffsets:s=>exploded(s,{face:.9,returns:.2,leds:.6,acrylic:-.55,studs:-.7,wires:.4,drain:.2,clamps:-.35}),
   componentInfo:{
    face:['Metal face','Opaque SS / aluminium face. Its finish follows the artwork or selected metallic finish.'],
    returns:['Metal returns','Smooth metal sidewalls · '+ '1″ standard depth, with an editable custom depth.'],
@@ -179,17 +196,17 @@ export const signs={
    studs:['Stud + rivnut','Hollow rear spacer with a threaded mounting stud through its bore, plus the rivnut connection. 3–4 uniformly spread mounts per letter; hardware is visually fitted to stroke width. Fabrication dimensions require confirmation.'],
    clamps:['L brackets + screws','At least three small L brackets per letter. Each bracket has two screws: one through the metal return and one through the acrylic back. Positions and sizes are illustrative.'],
    wires:['18 AWG wiring','Illustrative red / white wiring between LED modules inside the letters.'],
-   drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.']},
-  parts:[['face','#ad9270','Metal face'],['returns','#8d959e','Metal returns'],['leds','#f5d791','LED modules'],['acrylic','#a8d7e6','3/16″ acrylic back'],['studs','#747c88','Spacers + threaded studs'],['clamps','#9aa4aa','L brackets + screws'],['wires','#bd655c','18 AWG wiring'],['drain','#272b31','Drain position']],
+   drain:['Drain position','Illustrative bottom drain marker. Final hole position follows fabrication details.'],backer:BACKER_INFO},
+  parts:s=>withBacker(s,[['face','#ad9270','Metal face'],['returns','#8d959e','Metal returns'],['leds','#f5d791','LED modules'],['acrylic','#a8d7e6','3/16″ acrylic back'],['studs','#747c88','Spacers + threaded studs'],['clamps','#9aa4aa','L brackets + screws'],['wires','#bd655c','18 AWG wiring'],['drain','#272b31','Drain position']]),
   finishParts:['face','returns'],internalHidden:['face'],assembledHidden:['clamps'],singleParts:['leds','studs','drain','clamps'],
   hints:{assembled:'Opaque metal face and returns. Light exits through the acrylic back and reflects from the wall.',exploded:'Separated layers reveal your metal shell, rear-facing LEDs, acrylic back and wall mounting.',internal:'Face removed to inspect the LEDs and wiring. The LEDs point towards the acrylic back.'},
   specs:(s,led)=>s.depth+'″ depth · 3/16″ acrylic · '+led},
- 'face-lit':{id:'face-lit',label:'Face-lit',config:CONFIGS['face-lit'],mountings:['flush'],standardDepth:depthOf('face-lit').std,depthRange:depthOf('face-lit'),defaultIntensity:40,
+ 'face-lit':{id:'face-lit',label:'Face-lit',config:CONFIGS['face-lit'],construction:'channel-letter',mountings:MOUNTINGS,backer:backerOf,standardDepth:depthOf('face-lit').std,depthRange:depthOf('face-lit'),defaultIntensity:40,
   build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['face-lit']),glow:faceGlow,
-  // Flush: the wall touches the sealed back.
-  wallDepth:s=>(s.depth+gauges('face-lit').back)*(4/s.width),wallGap:()=>0,
+  // Flush: the wall (or the backer) touches the sealed back.
+  wallDepth:s=>(s.depth+gauges('face-lit').back+backerThickness(s))*(4/s.width),wallGap:()=>0,
   // Front to back: trim, face, LEDs, wires, returns, back, studs. LEDs and wiring sit on the back, so they move forward by the can depth.
-  explodedOffsets:s=>{const d=s.depth*4/s.width;return {trim:1.05,face:.7,leds:d+.3,wires:d+.25,returns:0,drain:0,back:-.35,studs:-.7};},
+  explodedOffsets:s=>{const d=s.depth*4/s.width;return exploded(s,{trim:1.05,face:.7,leds:d+.3,wires:d+.25,returns:0,drain:0,back:-.35,studs:-.7});},
   componentInfo:{
    trim:['Trim cap','Plastic or metal bezel wrapping the face edge and holding it in place: 1″ band over the returns, ⅛″ lip over the face (lip and .06″ thickness assumed). Never lit. Trimless removes it.'],
    face:['Acrylic face',spec(FACE_LIT.face)+' face, translucent, cut to the letter. White acrylic with translucent vinyl, or solid-tinted acrylic. Light leaves only through this face; dark artwork stays unlit.'],
@@ -198,21 +215,21 @@ export const signs={
    wires:['18 AWG wiring','Illustrative red / white wiring between LED modules inside the letters.'],
    back:['Sealed back','Solid '+spec(FACE_LIT.back)+' back. With the returns it forms a sealed can: no light reaches the wall.'],
    studs:['Threaded studs','3–4 threaded studs per letter through the back into the wall, nut inside the can. Flush mounting, no wall gap. Sizes are illustrative.'],
-   drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.']},
-  parts:[['trim','#1d1f21','Trim cap'],['face','#f1ede2',spec(FACE_LIT.face)+' face'],['returns','#8d959e','Returns'],['leds','#f5d791','LED modules'],['wires','#bd655c','18 AWG wiring'],['back','#6d747b','Sealed back'],['studs','#747c88','Threaded studs'],['drain','#272b31','Weep holes']],
+   drain:['Weep hole','One drain hole at the lowest point of each letter, for outdoor cans. Position is illustrative.'],backer:BACKER_INFO},
+  parts:s=>withBacker(s,[['trim','#1d1f21','Trim cap'],['face','#f1ede2',spec(FACE_LIT.face)+' face'],['returns','#8d959e','Returns'],['leds','#f5d791','LED modules'],['wires','#bd655c','18 AWG wiring'],['back','#6d747b','Sealed back'],['studs','#747c88','Threaded studs'],['drain','#272b31','Weep holes']]),
   finishParts:[],internalHidden:['trim','face'],assembledHidden:[],singleParts:['leds','studs','drain'],
   hints:{assembled:'Translucent acrylic face lit from inside. Returns, trim and back stay dark; nothing glows behind the letters.',exploded:'Separated layers: trim cap, acrylic face, front-facing LEDs and wiring, returns, sealed back and studs.',internal:'Face and trim removed to inspect the LEDs and wiring. The LEDs point at the acrylic face.'},
   specs:(s,led)=>s.depth+'″ depth · '+(s.trim==='none'?'trimless':s.trim+' trim')+' · '+(s.facetype==='tinted'?'tinted':'vinyl')+' face · '+led},
- 'fabricated-nonlit':{id:'fabricated-nonlit',label:'Fabricated',config:CONFIGS['fabricated-nonlit'],mountings:['flush'],lit:false,standardDepth:depthOf('fabricated-nonlit').std,depthRange:depthOf('fabricated-nonlit'),defaultIntensity:75,
+ 'fabricated-nonlit':{id:'fabricated-nonlit',label:'Fabricated',config:CONFIGS['fabricated-nonlit'],construction:'channel-letter',mountings:MOUNTINGS,backer:backerOf,lit:false,standardDepth:depthOf('fabricated-nonlit').std,depthRange:depthOf('fabricated-nonlit'),defaultIntensity:75,
   build:(art,s,isLit,renderer)=>buildChannelLetter(art,s,isLit,renderer,CONFIGS['fabricated-nonlit']),glow:null,
-  // Flush: the returns sit on the wall.
-  wallDepth:s=>s.depth*(4/s.width),wallGap:()=>0,
-  explodedOffsets:{face:.9,returns:0,studs:-.7},
+  // Flush: the returns sit on the wall (or on the backer).
+  wallDepth:s=>(s.depth+backerThickness(s))*(4/s.width),wallGap:()=>0,
+  explodedOffsets:s=>exploded(s,{face:.9,returns:0,studs:-.7}),
   componentInfo:{
    face:['Metal face',spec(FABRICATED.face)+' face cut to the letter. Takes the selected finish: polished or brushed metal, or paint.'],
    returns:['Returns',spec(FABRICATED.returns)+' sidewalls at the full sign depth ('+depthOf('fabricated-nonlit').std+'″ standard, '+depthOf('fabricated-nonlit').min+'–'+depthOf('fabricated-nonlit').max+'″), same finish as the face. They sit on the wall: the back is open.'],
-   studs:['Threaded studs','3–4 ¼″Ø threaded studs per letter, welded to the back of the face and set into the wall. Sizes are illustrative.']},
-  parts:[['face','#ad9270',spec(FABRICATED.face)+' face'],['returns','#8d959e',spec(FABRICATED.returns)+' returns'],['studs','#747c88','Threaded studs']],
+   studs:['Threaded studs','3–4 ¼″Ø threaded studs per letter, welded to the back of the face and set into the wall. Sizes are illustrative.'],backer:BACKER_INFO},
+  parts:s=>withBacker(s,[['face','#ad9270',spec(FABRICATED.face)+' face'],['returns','#8d959e',spec(FABRICATED.returns)+' returns'],['studs','#747c88','Threaded studs']]),
   finishParts:['face','returns'],internalHidden:['face'],assembledHidden:[],singleParts:['studs'],
   hints:{assembled:'Metal face and returns, flush on the wall. Not illuminated: no LEDs, no back panel.',exploded:'Separated: metal face, returns and the threaded studs welded to the back of the face.',internal:'Face removed: the can is open at the back, and the studs run straight into the wall.'},
   specs:s=>s.depth+'″ depth · '+spec(FABRICATED.face)+' face · not illuminated'}

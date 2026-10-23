@@ -2,8 +2,9 @@
 // this module only says which of them draw hardware today. A construction lists the ones it offers in its `signs` entry.
 // psuInside (raceway): the power supply sits inside the mounting, not behind the wall.
 import {MOUNTING_SETS} from '../registry.mjs?v=2';
-// Mountings that draw geometry. The rest stay declared until the shop sends real inches.
-const BUILT={'channel-letter':['flush']};
+// Mountings that draw geometry. The rest stay declared until the shop sends real inches. The flat backers are built with
+// assumed outline, margin and colour (signs/channel-letter/CLAUDE.md); only their thickness is from the shop.
+const BUILT={'channel-letter':['flush','backer-acm-4','backer-acrylic-8','backer-aluminum-25']};
 // Every mounting of a construction, each with `built`. [] = the construction has none; null = not known yet (ASK).
 export const mountingsFor=build=>{const set=MOUNTING_SETS[build];return set?set.map(m=>({...m,built:!!BUILT[build]?.includes(m.id)})):set??null;};
 // One mounting by construction and id; null when unknown.

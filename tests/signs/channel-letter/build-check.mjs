@@ -73,13 +73,30 @@ const waiting = Object.keys(VARIANTS).filter(id => rows.get(id).status !== 'done
 for (const [id, v] of Object.entries(VARIANTS)) { if (!signs[v.sign]) fail(id + ' opens unknown sign ' + v.sign);
   for (const t of v.options?.trim || []) if (!['artwork', 'black', 'white', 'silver', 'gold', 'bronze', 'none'].includes(t)) fail(id + ': unknown trim ' + t);
   for (const f of v.options?.finish || []) if (!['artwork', 'silver-brushed', 'silver-mirror', 'gold-brushed', 'gold-mirror', 'bronze-brushed', 'bronze-mirror', 'bronze-antique', 'black', 'white', 'custom'].includes(f)) fail(id + ': unknown finish ' + f); }
-// Every mounting a config offers must be in the registry's channel-letter set and built (flush only, until raceway / backers get dimensions).
+// Every mounting a config offers must be in the registry's channel-letter set and built: flush and the three flat backers
+// (raceway and backboard cabinet wait for the shop's dimensions).
 const {mounting, mountingsFor} = await import('../../../app/core/mounting.mjs');
 for (const [id, sg] of Object.entries(signs)) if (!sg.mountings?.length || sg.mountings.some(m => !mounting('channel-letter', m)?.built)) fail(id + ' offers an unbuilt mounting');
-if (mountingsFor('channel-letter').filter(m => m.built).map(m => m.id).join() !== 'flush') fail('only flush should be built until the shop sends dimensions');
+if (mountingsFor('channel-letter').filter(m => m.built).map(m => m.id).join() !== 'flush,backer-acm-4,backer-acrylic-8,backer-aluminum-25') fail('built channel-letter mountings should be flush + the three flat backers');
 // An unbuilt mounting is refused by name, never drawn as nothing.
-for (const id of ['raceway-2', 'backer-acm-4', 'nonsense']) { let refused = false; try { sign.build(art, {...settings, mounting: id}, true, renderer); } catch (e) { refused = /not implemented|Unknown/.test(e.message); }
+for (const id of ['raceway-2', 'backboard-cabinet-2', 'nonsense']) { let refused = false; try { sign.build(art, {...settings, mounting: id}, true, renderer); } catch (e) { refused = /not implemented|Unknown/.test(e.message); }
   if (!refused) fail('mounting ' + id + ' was not refused'); }
+// Flat backers, every sign × backer: a panel of the drawing's thickness whose back is on the wall and whose front is where the wall
+// was under flush; the wall moves back by exactly that thickness; studs reach through it into the wall; margin as set.
+for (const [id, sg] of Object.entries(signs)) for (const [mid, mm] of [['backer-acm-4', 4], ['backer-acrylic-8', 8], ['backer-aluminum-25', 2.5]]) {
+  const st = {...settings, signtype: id, depth: sg.standardDepth, mounting: mid, backermargin: 3, backercolour: 'clear'}, flushSt = {...st, mounting: 'flush'}, inch = 4 / st.width, t = mm / 25.4 * inch;
+  const b = sg.build(art, st, true, renderer); b.root.updateMatrixWorld(true); const what = id + ' / ' + mid + ': ';
+  if (b.parts.backer?.children.length !== 1) fail(what + 'expected one backer panel');
+  const panel = new THREE.Box3().setFromObject(b.parts.backer), wall = -(sg.wallDepth(st) + sg.wallGap(st)), flushWall = -(sg.wallDepth(flushSt) + sg.wallGap(flushSt));
+  if (Math.abs(sg.wallDepth(st) - sg.wallDepth(flushSt) - t) > 1e-9) fail(what + 'wall should move back by the backer thickness');
+  if (Math.abs(panel.min.z - wall) > 1e-6 || Math.abs(panel.max.z - flushWall) > 1e-6) fail(what + `panel ${panel.min.z / inch}…${panel.max.z / inch}″ should span the wall ${wall / inch}″ to ${flushWall / inch}″`);
+  if (Math.abs(panel.max.x - panel.min.x - (4 + 6 * inch)) > 1e-6 || Math.abs(panel.max.y - panel.min.y - (4 * art.h / art.w + 6 * inch)) > 1e-6) fail(what + 'panel should be the artwork plus a 3″ margin');
+  if (new THREE.Box3().setFromObject(b.parts.studs).min.z > wall - 1e-6) fail(what + 'studs must reach through the backer into the wall');
+  const mat = b.parts.backer.children[0].material; if ((mid === 'backer-acrylic-8') !== !!mat.transparent) fail(what + 'clear is for acrylic only (others draw white)');
+  const offsets = typeof sg.explodedOffsets === 'function' ? sg.explodedOffsets(st) : sg.explodedOffsets; if (!(offsets.backer < 0)) fail(what + 'backer must move back in the exploded view');
+  if (!(typeof sg.parts === 'function' ? sg.parts(st) : sg.parts).some(([n]) => n === 'backer') || !sg.componentInfo.backer) fail(what + 'backer needs an explorer button and inspector text'); }
+for (const [id, sg] of Object.entries(signs)) { const f = sg.build(art, {...settings, signtype: id, depth: sg.standardDepth, mounting: 'flush'}, true, renderer);
+  if (f.parts.backer || (typeof sg.parts === 'function' ? sg.parts(settings) : sg.parts).some(([n]) => n === 'backer')) fail(id + ': flush must have no backer'); }
 if (!mounting('channel-letter', 'raceway-2').psuInside || mounting('channel-letter', 'flush').psuInside) fail('power supply: inside the raceway, behind the wall for flush');
 // Config switches: the two built constructions resolve; anything else is refused, not half-built.
 for (const [id, cfg] of Object.entries(CONFIGS)) if (signs[id].config !== cfg) fail('preset ' + id + ' does not use its config');

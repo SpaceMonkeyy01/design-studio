@@ -52,7 +52,10 @@ flowchart LR
 - **Wiring**: red and white runs between modules, A* routed inside the letter, shown as 18 AWG (illustrative).
 - **Mounts**: 3–4 per letter (Auto, or forced 3 or 4), threaded studs into the wall.
 - **Tiny pieces** (under 8 px² or 0.2% of the largest piece in the 960 px mask) get face, returns and back, but no LEDs, wiring, mounts, clamps or drain.
-- **Not modelled**: power supply and junction box. With flush mounting (the only one built) they sit behind the wall; with raceway they sit inside the raceway (`psuInside` in `MOUNTING_SETS`).
+- **Not modelled**: power supply and junction box. With flush mounting and the flat backers they sit behind the wall; with raceway they sit inside the raceway (`psuInside` in `MOUNTING_SETS`).
+- **Mountings** (the Mounting control, from `MOUNTING_SETS`): flush and the three **flat backers** are built for every channel-letter sign; raceway (2″) and backboard cabinet (2″) are listed but disabled until the shop sends dimensions.
+  - **Flat backer** (`BACKERS` in `build.mjs`): a panel flat on the wall, the letters stud-mounted through it, the power supply behind the wall (Estimator drawings `references/channel-letter/*/backer-*.png`). Thickness from the mounting: 4 mm ACM (0.157″), 8 mm acrylic (0.315″), 2.5 mm aluminium (0.098″). The letters keep their place and their own gap (halo-lit keeps its spacers); the backer's front is where the wall was, so `wallDepth` grows by its thickness, the halo lands on the backer, studs run through it into the wall. Exploded: backer −1.05.
+  - **ASSUMED** (editable, swap in shop numbers when they arrive): rectangle around the artwork, 3″ margin (`backermargin`), square corners, white (`backercolour`: white, black, brushed silver; clear for acrylic only, any other backer asked for clear draws white). **ASK** the shop: outline (rectangle or contour-cut), margin, corner radius, stock colours.
 - **Unlit mode**: every emissive is 0 and the light plane is hidden.
 
 ## Halo-lit (reverse) — `back: acrylic, emit: [back]`
