@@ -10,7 +10,7 @@ Implemented: **halo-lit**, **face-lit** and **fabricated (non-lit)**, all from t
 
 ```sh
 npm start                 # serves app/ at http://127.0.0.1:8080: build board (landing), studio at /studio.html (needs WebGL2)
-npm test                  # CPU geometry + mocked runtime tests (fast, no browser)
+npm test                  # CPU geometry + mocked runtime tests + trace fidelity (built outline vs logo pixels, ≤3 px; diffs in test-output/trace/)
 npm install && npx playwright install chromium   # once, for the visual test
 npm run test:visual       # real Chromium: times upload→built, saves screenshots to test-output/ (+ cutout/ layers, alpha-checked)
 HEADED=1 npm run test:visual   # watch it run

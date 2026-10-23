@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {createEnvironment} from './materials.mjs?v=12';
+import {createEnvironment} from './materials.mjs?v=13';
 // Renderer, studio lights, camera framing and the wall. Shared by every sign type.
 export function createRenderer(canvas){return new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});}
 export function setupScene(renderer){const studioLights=[];let scene,camera,orbit;

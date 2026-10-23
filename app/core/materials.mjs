@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {contains,kelvinRGB} from './geometry.mjs?v=10';
+import {contains,kelvinRGB} from './geometry.mjs?v=11';
 // Finishes, LED colour and the reflection environment. Shared by every sign type.
 const ledColours={red:'#ff2929',amber:'#ffb23e',green:'#37ff6f',blue:'#416eff',purple:'#a05aff',pink:'#ff69bd'};
 export function ledColour(s){return s.led==='rgb'?new THREE.Color(s.rgb):ledColours[s.led]?new THREE.Color(ledColours[s.led]):new THREE.Color().setRGB(...kelvinRGB(s.led==='cct'?s.cct:+s.led),THREE.SRGBColorSpace);}

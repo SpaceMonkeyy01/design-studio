@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import {traceMask,groupLoops,smoothLoops} from './core/geometry.mjs?v=10';
+import {traceMask,groupLoops,smoothLoops} from './core/geometry.mjs?v=11';
 import {cleanArtworkMask} from './core/artwork.mjs?v=11';
 import {distanceField,componentLabels} from './core/routing.mjs?v=10';
-import {ledColour,finishMaterial,artworkColour,artworkMaterial} from './core/materials.mjs?v=12';
-import {createRenderer,setupScene,fitObject,createWall,wallBackdrop,createShadowCatcher} from './core/scene.mjs?v=13';
+import {ledColour,finishMaterial,artworkColour,artworkMaterial} from './core/materials.mjs?v=13';
+import {createRenderer,setupScene,fitObject,createWall,wallBackdrop,createShadowCatcher} from './core/scene.mjs?v=14';
 import {download,imagePNG,mattePNG,glowPNG,contactSheet,projectJSON} from './core/export.mjs?v=12';
 import {cameraFromCorners} from './core/placement.mjs?v=1';
-import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=8';
+import {signs as channelLetter,VARIANTS as channelLetterVariants} from './signs/channel-letter/build.mjs?v=9';
 import {SIGNS as REGISTRY} from './registry.mjs?v=2';
 // Sign types by id (the Sign type control). app.js only talks to a type through this interface (see signs/*/build.mjs).
 // VARIANTS: registry id → {sign, options}, from each construction.
