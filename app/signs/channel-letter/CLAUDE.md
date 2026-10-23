@@ -27,6 +27,7 @@ Built today:
 |---|---|---|---|---|---|
 | side-lit | acrylic + vinyl | translucent | opaque | side | spill on the wall (`sideGlow`) |
 | face-halo-lit | acrylic | opaque | acrylic | front, back | halo on the wall + face glow (`faceHaloGlow`) |
+| face-side-lit | acrylic | translucent | opaque | front, side | spill on the wall + face glow (`faceSideGlow`) |
 | halo-lit | opaque | opaque | acrylic | back | halo on the wall (`haloGlow`) |
 | face-lit | acrylic | opaque | opaque | front | face glow in front of the face (`faceGlow`) |
 | fabricated-nonlit | opaque | opaque | none | — | none (`lit: false`) |
@@ -140,6 +141,17 @@ From the Estimator cross-section (`references/channel-letter/face-halo-lit/flush
 - **Two light planes**: `faceHaloGlow` returns [halo, face glow]; the app handles a list of planes (`glows`), and the cutout export writes a halo and a glow layer (stack wall → halo → sign → glow). The halo is 1.5× halo-lit's, because intensity opens at 50% (for the face): at 50% it matches halo-lit's halo at 75%.
 - **Defaults**: 3″ depth (2.5–10″, registry), ¼″ gap, 50% intensity. Screenshots 23–25.
 - **Registry**: the two Face & Halo-Lit rows were set to `done` by hand on 2026-10-23 at the user's request (as side-lit and fabricated): the source generator must mark them done too, or the next regeneration reverts it.
+
+## Face & side-lit — `face: acrylic, returns: translucent, back: opaque, emit: [front, side]`
+
+From the Estimator cross-section (`references/channel-letter/face-side-lit/flush.png`, `PARTS['face-side-lit']`): side-lit without the vinyl. Built by the same `sideLitCan` (`litFace`).
+
+- **Face**: 3/16″ lit acrylic (face-lit's `acrylicFaceMaterial`; Face select: vinyl or tinted). No trim (none on the drawing).
+- **Returns**: 3/16″ lit acrylic as side-lit, at 1.5× (`FACE_SIDE`): intensity opens at 50% for the face, side-lit's at 75%. No Returns select (they are acrylic).
+- **Light planes** (`faceSideGlow`): the spill on the wall (1.5×) and the face glow in front; cutout gives a halo and a glow layer.
+- **Back, LEDs, studs, weep holes**: as side-lit. Flush; every mounting works.
+- **Defaults**: 3″ depth (2–5″, registry), 50% intensity. Screenshots 26–28. A white face with white LEDs reads as one bright block (face and returns both white): realistic, but less legible than a coloured face.
+- **Registry**: the two Face & Side-Lit rows set to `done` by hand on 2026-10-23, as the other variants.
 
 ## Fabricated non-lit — `back: none, emit: []`
 

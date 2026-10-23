@@ -4,7 +4,7 @@ Browser-only 3D visualizer for **channel-letter signs**. Logo in → traced 3D s
 No backend, no API keys, no build step. Plain ES modules + vendored Three.js r186 + Clipper 6.4.2.
 
 Origin: Halo Studio, built in ChatGPT by a teammate and handed over on 2026-10-19 (`docs/handover/`). Everything after the original history was made by us.
-Implemented: **halo-lit**, **face-lit**, **side-lit**, **face & halo-lit** and **fabricated (non-lit)**, all from the one `channel-letter` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
+Implemented: **halo-lit**, **face-lit**, **side-lit**, **face & halo-lit**, **face & side-lit** and **fabricated (non-lit)**, all from the one `channel-letter` construction, chosen with the Sign type control. Code is organised by **construction** (how a sign is built), not by sign type: the studio's 65 variants come down to 5 constructions (channel-letter, media, cabinet, flat, tube). Variants are data. See "Adding a variant or construction".
 
 ## Run
 
@@ -19,7 +19,7 @@ cp -r test-output test-baseline      # once, before a change: keep the "before" 
 npm run test:compare      # after the change: pixel diff test-output/ vs test-baseline/ (same GPU)
 ```
 
-Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated, 20–22 side-lit, 23–25 face & halo-lit). Subfolders (`cutout/`, `scene/`, `reference/`) are checked by assertions, not compared.
+Screenshots are deterministic on one machine (two runs are pixel-identical), so a refactor must give `All N screenshots match` (01–09 halo-lit, 10–15 face-lit, 16–19 fabricated, 20–22 side-lit, 23–25 face & halo-lit, 26–28 face & side-lit). Subfolders (`cutout/`, `scene/`, `reference/`) are checked by assertions, not compared.
 
 Baseline (Intel HD Graphics 530, Edge; Playwright's Chromium install hangs on that PC): sample first build 5.0–8.1 s (over the 5 s budget, varies with machine load), uploads 1.2–3.2 s. Timings swing run to run, so compare a change against `main` timed back-to-back on the same machine, not against these numbers.
 

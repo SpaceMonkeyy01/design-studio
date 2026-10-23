@@ -93,6 +93,12 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   await click('[data-view=front]'); await snap('23-face-halo-lit'); await click('#unlit'); await snap('24-face-halo-lit-unlit'); await click('#lit');
   await click('[data-mode=exploded]'); await snap('25-face-halo-lit-exploded'); await click('[data-mode=assembled]'); await choose('wall', 'plaster');
   results.push({ step: 'face & halo-lit', ok: fhUI.face && fhUI.trimHidden && fhUI.gap, ...fhUI });
+  // Face & side-lit (26–28): lit face + lit returns; Face shown, Trim and Returns hidden (acrylic returns, no trim).
+  await choose('signtype', 'face-side-lit'); await page.waitForFunction(() => /^Face & side-lit/.test(document.getElementById('status').textContent)); await choose('wall', 'charcoal');
+  const fsUI = await page.evaluate(() => ({ face: !document.getElementById('facetype').closest('[data-sign]').hidden, trimHidden: document.getElementById('trim').closest('label').hidden, returnsHidden: document.getElementById('returns').closest('label').hidden }));
+  await click('[data-view=front]'); await snap('26-face-side-lit'); await click('#unlit'); await snap('27-face-side-lit-unlit'); await click('#lit');
+  await click('[data-mode=exploded]'); await snap('28-face-side-lit-exploded'); await click('[data-mode=assembled]'); await choose('wall', 'plaster');
+  results.push({ step: 'face & side-lit', ok: fsUI.face && fsUI.trimHidden && fsUI.returnsHidden, ...fsUI });
   await choose('signtype', 'halo-lit'); await page.waitForFunction(() => /^Halo-lit/.test(document.getElementById('status').textContent)); }
 // Build board = landing page (app/index.html): every built variant links into the studio, and "Open Design Studio" opens it
 // with the default sign. Click through to the studio, halo-lit and face-lit Premium.
@@ -101,10 +107,10 @@ const uploadAndWait = async f => { const name = path.basename(f); t = Date.now()
   const links = await page.$$eval('a.v', as => as.map(a => a.getAttribute('href'))), untitled = await page.$$eval('.thead b', bs => bs.filter(b => !b.textContent.trim()).length); await page.screenshot({ path: path.join(out, 'dashboard', 'board.png'), fullPage: true });
   const open = async (needle, sign) => { await page.goto(url); await page.waitForSelector('a.v'); await page.click(needle ? `a.v[href*="${needle}"] >> nth=0` : 'a.cta');
     await page.waitForFunction(s => new RegExp('^' + s).test(document.getElementById('status').textContent), sign); return page.evaluate(() => ({ url: location.search, sign: document.getElementById('signtype').value, trim: document.getElementById('trim').value, finish: document.getElementById('finish').value })); };
-  const studio = await open(null, 'Halo-lit'), halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit'), gold = await open('fabricated-letters-polished-gold', 'Fabricated'), sideLit = await open('channel-letters-side-lit', 'Side-lit'), faceHalo = await open('channel-letters-face-halo-lit', 'Face & halo-lit');
+  const studio = await open(null, 'Halo-lit'), halo = await open('halo-lit-back-lit', 'Halo-lit'), premium = await open('face-lit-premium', 'Face-lit'), gold = await open('fabricated-letters-polished-gold', 'Fabricated'), sideLit = await open('channel-letters-side-lit', 'Side-lit'), faceHalo = await open('channel-letters-face-halo-lit', 'Face & halo-lit'), faceSide = await open('channel-letters-face-side-lit', 'Face & side-lit');
   // And back: the studio's "← Build board" link returns to the landing page.
   await page.click('#boardlink'); const back = await page.waitForSelector('a.cta').then(() => true, () => false);
-  results.push({ step: 'landing board click-through', ok: back && untitled === 0 && links.length === 17 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver' && gold.sign === 'fabricated-nonlit' && gold.finish === 'gold-mirror' && sideLit.sign === 'side-lit' && faceHalo.sign === 'face-halo-lit', links: links.length, untitled, back, studio, halo, premium, gold }); }
+  results.push({ step: 'landing board click-through', ok: back && untitled === 0 && links.length === 19 && links.every(h => /^studio\.html\?type=/.test(h)) && studio.url === '' && studio.sign === 'halo-lit' && halo.sign === 'halo-lit' && premium.sign === 'face-lit' && premium.trim === 'silver' && gold.sign === 'fabricated-nonlit' && gold.finish === 'gold-mirror' && sideLit.sign === 'side-lit' && faceHalo.sign === 'face-halo-lit' && faceSide.sign === 'face-side-lit', links: links.length, untitled, back, studio, halo, premium, gold }); }
 // Reference library (app/reference.html): every drawing loads, the studio's button opens it at the current sign,
 // and a drawing enlarges. Screenshots in test-output/reference/ (not compared: Google Fonts over the network).
 { fs.mkdirSync(path.join(out, 'reference'), { recursive: true });
